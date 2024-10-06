@@ -1,3 +1,12 @@
+#region License
+/******************************************************************************
+ * @author Ángel Fernández Pineda. Madrid. Spain.
+ * @date 2024-10-05
+ *
+ * @copyright Licensed under the EUPL
+ *****************************************************************************/
+#endregion License
+
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -11,7 +20,7 @@ namespace Afpineda.ESP32SimWheelPlugin
     internal sealed class TelemetryDevice
     {
         // --------------------------------------------------------
-        // Constructor / destructor
+        #region Constructor / destructor
         // --------------------------------------------------------
 
         public TelemetryDevice(HidDevice hidDevice)
@@ -86,8 +95,10 @@ namespace Afpineda.ESP32SimWheelPlugin
             throw new UnsupportedDeviceException();
         }
 
+        #endregion Constructor / destructor
+
         // --------------------------------------------------------
-        // HID attributes
+        #region HID attributes
         // --------------------------------------------------------
 
         public string DevicePath
@@ -104,15 +115,19 @@ namespace Afpineda.ESP32SimWheelPlugin
             get { return _hidDevice.VendorID; }
         }
 
+        #endregion
+
         // --------------------------------------------------------
-        // Capabilities
+        #region Device capabilities
         // --------------------------------------------------------
 
         public ushort DataMajorVersion { get; private set; }
         public ushort DataMinorVersion { get; private set; }
 
+        #endregion Device capabilities
+
         // --------------------------------------------------------
-        // Telemetry
+        #region Telemetry
         // --------------------------------------------------------
 
         public long MillisecondsPerTelemetryFrame { get { return _millisecondsPerFrame; } }
@@ -154,8 +169,10 @@ namespace Afpineda.ESP32SimWheelPlugin
             return true;
         }
 
+        #endregion Telemetry
+
         // --------------------------------------------------------
-        // Device listing
+        #region Device listing
         // --------------------------------------------------------
 
         public static IEnumerable<TelemetryDevice> GetAll()
@@ -176,8 +193,10 @@ namespace Afpineda.ESP32SimWheelPlugin
             }
         }
 
+        #endregion Device listing
+
         // --------------------------------------------------------
-        // Private methods in help of the class constructor
+        #region Private methods in help of the class constructor
         // --------------------------------------------------------
 
         private static void CheckOutputReportSizes(
@@ -242,8 +261,10 @@ namespace Afpineda.ESP32SimWheelPlugin
                 throw new UnsupportedDeviceException();
         }
 
+        #endregion Private methods in help of the class constructor
+
         // --------------------------------------------------------
-        // Private methods
+        #region Private methods
         // --------------------------------------------------------
 
         private static void ToBytes(
@@ -443,8 +464,10 @@ namespace Afpineda.ESP32SimWheelPlugin
                 out _gaugesReport[12]);
         }
 
+        #endregion Private methods
+
         // --------------------------------------------------------
-        // Private fields
+        #region Private fields
         // --------------------------------------------------------
 
         internal readonly HidDevice _hidDevice;
@@ -459,8 +482,10 @@ namespace Afpineda.ESP32SimWheelPlugin
         private readonly byte[] _raceControlReport;
         private readonly byte[] _gaugesReport;
 
+        #endregion Private fields
+
         // --------------------------------------------------------
-        // Private constants
+        #region Private constants
         // --------------------------------------------------------
 
         // Report ID
@@ -487,5 +512,7 @@ namespace Afpineda.ESP32SimWheelPlugin
         private const ushort CAP_TELEMETRY_ECU = 1 << 7;
         private const ushort CAP_TELEMETRY_RACE_CONTROL = 1 << 8;
         private const ushort CAP_TELEMETRY_GAUGES = 1 << 9;
+
+        #endregion Private constants
     }
 }

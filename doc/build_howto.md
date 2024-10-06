@@ -18,6 +18,6 @@
 
 ## Visual Studio Code
 
-Visual Studio Code features some extension to work with C# and *.NET*.
+Visual Studio Code features some extensions to work with C# and *.NET*.
 However, it does not work with "non-SDK-style" projects as this one.
 It works just as a code editor.
