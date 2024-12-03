@@ -31,14 +31,11 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="HidSharp">
-      <HintPath>$(SIMHUB_INSTALL_PATH)\HidSharp.dll</HintPath>
-    </Reference>
     <Reference Include="AvalonDock">
-      <HintPath>$(SIMHUB_INSTALL_PATH)\AvalonDock.dll</HintPath>
+      <HintPath>$(SIMHUB_INSTALL_PATH)AvalonDock.dll</HintPath>
     </Reference>
     <Reference Include="AvalonDock.Themes.VS2013">
-      <HintPath>$(SIMHUB_INSTALL_PATH)\AvalonDock.Themes.VS2013.dll</HintPath>
+      <HintPath>$(SIMHUB_INSTALL_PATH)AvalonDock.Themes.VS2013.dll</HintPath>
     </Reference>
     <Reference Include="GameReaderCommon">
       <HintPath>$(SIMHUB_INSTALL_PATH)GameReaderCommon.dll</HintPath>
@@ -101,8 +98,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="src\device\TelemetryDevice.cs" />
-    <Compile Include="src\device\UnsupportedDeviceException.cs" />
+    <Compile Include="src\ESP32SimWheel\Types.cs" />
+    <Compile Include="src\ESP32SimWheel\Constants.cs" />
+    <Compile Include="src\ESP32SimWheel\Devices.cs" />
+    <Compile Include="src\ESP32SimWheel\DeviceV1.cs" />
+    <Compile Include="src\ESP32SimWheel\UnsupportedDeviceException.cs" />
     <Compile Include="src\plugin\CustomDataPlugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">

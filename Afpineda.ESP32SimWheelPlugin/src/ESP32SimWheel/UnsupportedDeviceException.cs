@@ -1,6 +1,6 @@
 using System;
 
-namespace Afpineda.ESP32SimWheelPlugin
+namespace ESP32SimWheel
 {
     public class UnsupportedDeviceException : Exception
     {

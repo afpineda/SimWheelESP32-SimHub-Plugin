@@ -4,6 +4,7 @@ using System;
 using System.Windows.Media;
 using System.Collections;
 using System.Collections.Generic;
+using ESP32SimWheel;
 
 namespace Afpineda.ESP32SimWheelPlugin
 {
@@ -43,28 +44,26 @@ namespace Afpineda.ESP32SimWheelPlugin
                 if (_refreshDeviceList)
                 {
                     _refreshDeviceList = false;
-                    _devices = TelemetryDevice.GetAll();
+                    _devices = ESP32SimWheel.Devices.EnumerateTelemetryDataCapable();
                     int count = 0;
                     foreach (var device in _devices)
                     {
                         count++;
-                        SimHub.Logging.Current.Info(
-                            string.Format(
+                        SimHub.Logging.Current.InfoFormat(
                                 "[ESP32 Sim-wheel] Found: VID/PID {0}/{1} (v{2}.{3})",
-                                device.VendorID,
-                                device.ProductID,
-                                device.DataMajorVersion,
-                                device.DataMinorVersion));
+                                device.HidInfo.VendorID,
+                                device.HidInfo.ProductID,
+                                device.DataVersion.Major,
+                                device.DataVersion.Minor);
                     }
-                    SimHub.Logging.Current.Info(
-                        string.Format(
-                            "[ESP32 Sim-wheel] Refresh: {0} devices found",
-                            count));
+                    SimHub.Logging.Current.InfoFormat(
+                        "[ESP32 Sim-wheel] Refresh: {0} devices found",
+                        count);
                 }
 
                 foreach (var device in _devices)
                 {
-                    if (!device.SendTelemetry(ref data))
+                    if (!device.TelemetryData.SendTelemetry(ref data))
                         _refreshDeviceList = true;
                 }
             }
@@ -110,7 +109,7 @@ namespace Afpineda.ESP32SimWheelPlugin
         }
 
         private bool _refreshDeviceList = true;
-        private IEnumerable<TelemetryDevice> _devices;
+        private IEnumerable<ESP32SimWheel.IDevice> _devices;
 
     }
 }
