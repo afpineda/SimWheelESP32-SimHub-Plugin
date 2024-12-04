@@ -59,9 +59,8 @@ namespace Afpineda.ESP32SimWheelPlugin
                     {
                         count++;
                         SimHub.Logging.Current.InfoFormat(
-                                "[ESP32 Sim-wheel] Found: VID/PID {0}/{1} (v{2}.{3})",
-                                device.HidInfo.VendorID,
-                                device.HidInfo.ProductID,
+                                "[ESP32 Sim-wheel] Found: '{0}' (v{1}.{2})",
+                                device.HidInfo.DisplayName,
                                 device.DataVersion.Major,
                                 device.DataVersion.Minor);
                     }

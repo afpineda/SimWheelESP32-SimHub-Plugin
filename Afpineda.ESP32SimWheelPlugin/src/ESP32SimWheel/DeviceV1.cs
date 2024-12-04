@@ -137,8 +137,15 @@ namespace ESP32SimWheel
                     _hidInfo.Path = hidDevice.DevicePath;
                     _hidInfo.VendorID = hidDevice.Attributes.VendorId;
                     _hidInfo.ProductID = hidDevice.Attributes.ProductId;
-                    _hidInfo.DisplayName = ""; // hidDevice.ReadProduct() DOES NOT WORK
                     _hidInfo.Manufacturer = ""; // hidDevice.ReadManufacturer() DOES NOT WORK
+                    string oemDisplayName =
+                        Utils.GetHidDisplayName(
+                            hidDevice.Attributes.VendorId,
+                            hidDevice.Attributes.ProductId);
+                    if (oemDisplayName==null)
+                        _hidInfo.DisplayName = string.Format("S/N:{0,16:X16}",UniqueID);
+                    else
+                        _hidInfo.DisplayName = oemDisplayName;
 
                     // Initialize ITelemetryData implementation
                     _telemetryTimer.Stop();
