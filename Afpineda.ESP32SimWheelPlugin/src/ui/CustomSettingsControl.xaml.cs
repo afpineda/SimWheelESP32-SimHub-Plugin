@@ -1,4 +1,13 @@
-﻿using SimHub.Plugins.Styles;
+﻿#region License
+/******************************************************************************
+ * @author Ángel Fernández Pineda. Madrid. Spain.
+ * @date 2024-12-04
+ *
+ * @copyright Licensed under the EUPL
+ *****************************************************************************/
+#endregion License
+
+using SimHub.Plugins.Styles;
 using System.Windows.Controls;
 
 namespace Afpineda.ESP32SimWheelPlugin

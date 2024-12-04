@@ -1,3 +1,12 @@
+#region License
+/******************************************************************************
+ * @author Ángel Fernández Pineda. Madrid. Spain.
+ * @date 2024-12-04
+ *
+ * @copyright Licensed under the EUPL
+ *****************************************************************************/
+#endregion License
+
 using GameReaderCommon;
 
 namespace ESP32SimWheel
