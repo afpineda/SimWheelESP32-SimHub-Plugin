@@ -18,6 +18,12 @@ namespace ESP32SimWheel
     {
         public static IEnumerable<ESP32SimWheel.IDevice> Enumerate()
         {
+
+#if DEBUG
+    foreach (var fakeDevice in FakeDevices)
+       yield return fakeDevice;
+#endif
+
             foreach (var hid in HidLibrary.HidDevices.Enumerate())
             {
                 ESP32SimWheel.IDevice AsSimWheel = null;
@@ -41,5 +47,29 @@ namespace ESP32SimWheel
                 where device.Capabilities.UsesTelemetryData
                 select device;
         }
+
+#if DEBUG
+        private static List<FakeDevice> FakeDevices { get; } = new List<FakeDevice>();
+
+        public static void UseFakeDevices(int count = 1000)
+        {
+            // Create fake devices for testing
+            FakeDevices.Clear();
+            FakeDevice fake;
+            if (count > 0)
+            {
+                fake = new FakeDevice(0, "Fake telemetry device");
+                fake.Capabilities = new Capabilities(0x0040, 1);
+                FakeDevices.Add(fake);
+            }
+            if (count > 1)
+            {
+                fake = new FakeDevice(1, "Fake clutch device");
+                fake.Capabilities = new Capabilities(0x0002, 0);
+                FakeDevices.Add(fake);
+            }
+        }
+#endif
+
     } // class Devices
 } // namespace ESP32SimWheel

@@ -106,6 +106,9 @@ namespace Afpineda.ESP32SimWheelPlugin
         /// <param name="pluginManager"></param>
         public void Init(PluginManager pluginManager)
         {
+#if DEBUG
+            Devices.UseFakeDevices();
+#endif
             SimHub.Logging.Current.Info("[ESP32 Sim-wheel] Init");
             _refreshDeviceList = true;
         }

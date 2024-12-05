@@ -102,6 +102,7 @@
     <Compile Include="src\ESP32SimWheel\Constants.cs" />
     <Compile Include="src\ESP32SimWheel\Devices.cs" />
     <Compile Include="src\ESP32SimWheel\DeviceV1.cs" />
+    <Compile Include="src\ESP32SimWheel\FakeDevice.cs" />
     <Compile Include="src\ESP32SimWheel\UnsupportedDeviceException.cs" />
     <Compile Include="src\ESP32SimWheel\Utils.cs" />
     <Compile Include="src\plugin\CustomDataPlugin.cs" />
