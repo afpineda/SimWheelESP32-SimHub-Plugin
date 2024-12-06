@@ -39,44 +39,52 @@
                 <styles:SHTabItem Header="Info"
                                   Background="red"
                                   x:Name="InfoPage">
-                    <StackPanel>
-                        <styles:SHTitledGroup Margin="0,10,10,10"
-                                              Title="Security Lock">
-                            <TextBlock x:Name="SecurityLockText">
-                                none
-                            </TextBlock>
-                        </styles:SHTitledGroup>
-                        <styles:SHTitledGroup Margin="0,10,10,10"
-                                              Title="VendorID / Product ID">
-                            <TextBlock x:Name="HidInfoText">
-                                xxxx / yyyy
-                            </TextBlock>
-                        </styles:SHTitledGroup>
-                        <styles:SHTitledGroup Margin="0,10,10,10"
-                                              Title="Data Version">
-                            <TextBlock x:Name="DataVersionText">
-                                X.Y
-                            </TextBlock>
-                        </styles:SHTitledGroup>
-                        <styles:SHTitledGroup Margin="0,10,10,10"
-                                              Title="Device ID">
-                            <TextBlock x:Name="DeviceIDText">
-                                00000000
-                            </TextBlock>
-                        </styles:SHTitledGroup>
-                        <styles:SHTitledGroup Margin="0,10,10,10"
-                                              Title="Telemetry data">
-                            <TextBlock x:Name="TelemetryDataText">
-                                none
-                            </TextBlock>
-                        </styles:SHTitledGroup>
-                        <styles:SHTitledGroup Margin="0,10,10,10"
-                                              Title="Battery">
-                            <TextBlock x:Name="BatteryText">
-                                none
-                            </TextBlock>
-                        </styles:SHTitledGroup>
-                    </StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <styles:SHTitledGroup Margin="0,10,10,10"
+                                                  Title="Security Lock">
+                                <TextBlock x:Name="SecurityLockText">
+                                    none
+                                </TextBlock>
+                            </styles:SHTitledGroup>
+                            <styles:SHTitledGroup Margin="0,10,10,10"
+                                                  Title="VendorID / Product ID">
+                                <TextBlock x:Name="HidInfoText">
+                                    xxxx / yyyy
+                                </TextBlock>
+                            </styles:SHTitledGroup>
+                            <styles:SHTitledGroup Margin="0,10,10,10"
+                                                  Title="Data Version">
+                                <TextBlock x:Name="DataVersionText">
+                                    X.Y
+                                </TextBlock>
+                            </styles:SHTitledGroup>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <styles:SHTitledGroup Margin="0,10,10,10"
+                                                  Title="Device ID">
+                                <TextBlock x:Name="DeviceIDText">
+                                    00000000
+                                </TextBlock>
+                            </styles:SHTitledGroup>
+                            <styles:SHTitledGroup Margin="0,10,10,10"
+                                                  Title="Telemetry data">
+                                <TextBlock x:Name="TelemetryDataText">
+                                    none
+                                </TextBlock>
+                            </styles:SHTitledGroup>
+                            <styles:SHTitledGroup Margin="0,10,10,10"
+                                                  Title="Battery">
+                                <TextBlock x:Name="BatteryText">
+                                    none
+                                </TextBlock>
+                            </styles:SHTitledGroup>
+                        </StackPanel>
+                    </Grid>
                 </styles:SHTabItem>
                 <styles:SHTabItem Header="Clutch paddles"
                                   x:Name="ClutchPage">
