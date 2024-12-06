@@ -11,6 +11,7 @@ using System;
 using System.Text;
 using System.Diagnostics;
 using System.Linq;
+using System.IO;
 using HidLibrary;
 using SimHub;
 using GameReaderCommon;
@@ -22,7 +23,8 @@ namespace ESP32SimWheel
         public class Device :
             ESP32SimWheel.IDevice,
             ESP32SimWheel.ITelemetryData,
-            ESP32SimWheel.IClutch
+            ESP32SimWheel.IClutch,
+            ESP32SimWheel.ISecurityLock
         {
             // --------------------------------------------------------
             // String representation
@@ -51,7 +53,7 @@ namespace ESP32SimWheel
                 }
             }
             public IAnalogClutch AnalogClutch { get { return null; } }
-            public ISecurityLock SecurityLock { get { return null; } }
+            public ISecurityLock SecurityLock { get { return this; } }
             public IBattery Battery { get { return null; } }
             public ITelemetryData TelemetryData
             {
@@ -66,18 +68,34 @@ namespace ESP32SimWheel
             public IDpad DPad { get { return null; } }
             public ulong UniqueID { get; private set; }
 
-            public bool Tick()
+            public bool Refresh()
             {
-                byte[] newReport3;
                 bool changed = false;
-                hidDevice.OpenDevice();
-                if (hidDevice.ReadFeatureData(out newReport3, 3))
+                byte[] newReport3 = NewReport3();
+
+                if (hidDevice.ReadFeatureData(out newReport3, Constants.RID_FEATURE_CONFIG))
                 {
-                    if (!Enumerable.SequenceEqual(newReport3, _report3))
+                    if (!Enumerable.SequenceEqual<byte>(newReport3, _report3))
                         changed = true;
                     _report3 = newReport3;
+                    return changed;
                 }
-                return changed;
+                ThrowIOException();
+                return false;
+            }
+
+            // --------------------------------------------------------
+            // ISecurityLock implementation
+            // --------------------------------------------------------
+
+            public bool IsLocked
+            {
+                get
+                {
+                    if (_report3.Length > 6)
+                        return (_report3[6] != 0);
+                    return false;
+                }
             }
 
             // --------------------------------------------------------
@@ -91,8 +109,8 @@ namespace ESP32SimWheel
                 {
                     byte[] newReport3 = NewReport3();
                     newReport3[1] = (byte)value;
-                    hidDevice.OpenDevice();
-                    hidDevice.WriteFeatureData(newReport3);
+                    if (!hidDevice.WriteFeatureData(newReport3))
+                        ThrowIOException();
                 }
             }
 
@@ -105,8 +123,8 @@ namespace ESP32SimWheel
                     {
                         byte[] newReport3 = NewReport3();
                         newReport3[3] = value;
-                        hidDevice.OpenDevice();
-                        hidDevice.WriteFeatureData(newReport3);
+                        if (!hidDevice.WriteFeatureData(newReport3))
+                            ThrowIOException();
                     }
                 }
             }
@@ -124,7 +142,6 @@ namespace ESP32SimWheel
                     try
                     {
                         _telemetryTimer.Stop();
-                        hidDevice.OpenDevice();
                         if (_capabilities.UsesPowertrainTelemetry)
                         {
                             BuildPowertrainReport(ref data.NewData);
@@ -162,7 +179,7 @@ namespace ESP32SimWheel
             // Constructor
             // --------------------------------------------------------
 
-            public Device(HidLibrary.IHidDevice hidDevice)
+            public Device(HidDevice hidDevice)
             {
                 if (hidDevice == null)
                     throw new ArgumentNullException("hidDevice");
@@ -170,100 +187,116 @@ namespace ESP32SimWheel
                 hidDevice.OpenDevice();
 
                 // Read capabilities (feature) report
-                byte[] capabilitiesReport;
-                if (hidDevice.ReadFeatureData(out capabilitiesReport, 2) &&
-                    (capabilitiesReport.Length >= Constants.REPORT2_SIZE_V1_1))
+                byte[] capabilitiesReport = GetCapabilitiesReport();
+
+                // SimHub.Logging.Current.Info("[ESP32SimWheel] Candidate found");
+                // Check magic number and data version
+                CheckMagicNumber(capabilitiesReport);
+                _dataVersion = CheckDataVersion(capabilitiesReport);
+                // SimHub.Logging.Current.Info("[ESP32SimWheel] Magic number and data version ok");
+
+                // Check report sizes
+                int maxFeatureReportSize = hidDevice.Capabilities.FeatureReportByteLength;
+                int maxOutputReportSize = hidDevice.Capabilities.OutputReportByteLength;
+                CheckFeatureReportSizes(_dataVersion.Minor, maxFeatureReportSize);
+                CheckOutputReportSizes(_dataVersion.Minor, maxOutputReportSize);
+                // SimHub.Logging.Current.Info("[ESP32SimWheel] Report sizes ok");
+
+                // Retrieve unique ID
+                UniqueID = (_dataVersion.Minor >= 1) ?
+                    BitConverter.ToUInt64(capabilitiesReport, 9)
+                    :
+                    0;
+
+                // Retrieve max FPS
+                byte fps = (capabilitiesReport.Length >= Constants.REPORT2_SIZE_V1_3) && (_dataVersion.Minor >= 3) ?
+                    capabilitiesReport[17]
+                    :
+                    (byte)0;
+
+                // Create capabilities struct
+                ushort flags = BitConverter.ToUInt16(capabilitiesReport, 7);
+                this._capabilities = new Capabilities(flags, fps);
+
+                // Populate HidInfo
+                _hidInfo.Path = hidDevice.DevicePath;
+                _hidInfo.VendorID = hidDevice.Attributes.VendorId;
+                _hidInfo.ProductID = hidDevice.Attributes.ProductId;
+                _hidInfo.Manufacturer = ""; // Note: ReadManufacturer() does not work
+                string oemDisplayName = Utils.GetHidDisplayName(
+                    _hidInfo.VendorID,
+                    _hidInfo.ProductID);
+                if (oemDisplayName == null)
+                    _hidInfo.DisplayName = string.Format("S/N:{0,16:X16}", UniqueID);
+                else
+                    _hidInfo.DisplayName = oemDisplayName;
+
+                // Initialize ITelemetryData implementation
+                _telemetryTimer.Stop();
+                if (_capabilities.UsesTelemetryData)
                 {
-                    // Check magic number and data version
-                    CheckMagicNumber(capabilitiesReport);
-                    _dataVersion = CheckDataVersion(capabilitiesReport);
-
-                    // Check report sizes
-                    short maxFeatureReportSize = hidDevice.Capabilities.FeatureReportByteLength;
-                    short maxOutputReportSize = hidDevice.Capabilities.OutputReportByteLength;
-                    CheckFeatureReportSizes(_dataVersion.Minor, maxFeatureReportSize);
-                    CheckOutputReportSizes(_dataVersion.Minor, maxOutputReportSize);
-
-                    // Retrieve unique ID
-                    UniqueID = (_dataVersion.Minor >= 1) ?
-                        BitConverter.ToUInt64(capabilitiesReport, 9)
-                        :
-                        0;
-
-                    // Retrieve max FPS
-                    byte fps = (capabilitiesReport.Length >= Constants.REPORT2_SIZE_V1_3) && (_dataVersion.Minor >= 3) ?
-                        capabilitiesReport[17]
-                        :
-                        (byte)0;
-
-                    // Create capabilities struct
-                    ushort flags = BitConverter.ToUInt16(capabilitiesReport, 7);
-                    this._capabilities = new Capabilities(flags, fps);
-
-                    // Populate HidInfo
-                    _hidInfo.Path = hidDevice.DevicePath;
-                    _hidInfo.VendorID = hidDevice.Attributes.VendorId;
-                    _hidInfo.ProductID = hidDevice.Attributes.ProductId;
-                    _hidInfo.Manufacturer = ""; // hidDevice.ReadManufacturer() DOES NOT WORK
-                    string oemDisplayName =
-                        Utils.GetHidDisplayName(
-                            hidDevice.Attributes.VendorId,
-                            hidDevice.Attributes.ProductId);
-                    if (oemDisplayName == null)
-                        _hidInfo.DisplayName = string.Format("S/N:{0,16:X16}", UniqueID);
-                    else
-                        _hidInfo.DisplayName = oemDisplayName;
-
-                    // Initialize ITelemetryData implementation
-                    _telemetryTimer.Stop();
-                    if (_capabilities.UsesTelemetryData)
+                    _millisecondsPerFrame = 1000 / _capabilities.FramesPerSecond;
+                    // Create buffers for output reports
+                    int report20Size;
+                    int report21Size;
+                    int report22Size;
+                    int report23Size;
+                    GetTelemetryDataReportSizes(
+                        _dataVersion.Minor,
+                        out report20Size,
+                        out report21Size,
+                        out report22Size,
+                        out report23Size);
+                    if ((report20Size > 0) && (report21Size > 0) && (report22Size > 0) && (report23Size > 0))
                     {
-                        _millisecondsPerFrame = 1000 / _capabilities.FramesPerSecond;
-                        // Create buffers for output reports
-                        int report20Size;
-                        int report21Size;
-                        int report22Size;
-                        int report23Size;
-                        GetTelemetryDataReportSizes(
-                            _dataVersion.Minor,
-                            out report20Size,
-                            out report21Size,
-                            out report22Size,
-                            out report23Size);
-                        if ((report20Size > 0) && (report21Size > 0) && (report22Size > 0) && (report23Size > 0))
-                        {
-                            _powertrainReport = new byte[report20Size];
-                            _powertrainReport[0] = Constants.RID_OUTPUT_POWERTRAIN;
-                            _ecuReport = new byte[report21Size];
-                            _ecuReport[0] = Constants.RID_OUTPUT_ECU;
-                            _raceControlReport = new byte[report22Size];
-                            _raceControlReport[0] = Constants.RID_OUTPUT_RACE_CONTROL;
-                            _gaugesReport = new byte[report23Size];
-                            _gaugesReport[0] = Constants.RID_OUTPUT_GAUGES;
-                        }
-                        else
-                            throw new UnsupportedDeviceException();
+                        _powertrainReport = new byte[report20Size];
+                        _powertrainReport[0] = Constants.RID_OUTPUT_POWERTRAIN;
+                        _ecuReport = new byte[report21Size];
+                        _ecuReport[0] = Constants.RID_OUTPUT_ECU;
+                        _raceControlReport = new byte[report22Size];
+                        _raceControlReport[0] = Constants.RID_OUTPUT_RACE_CONTROL;
+                        _gaugesReport = new byte[report23Size];
+                        _gaugesReport[0] = Constants.RID_OUTPUT_GAUGES;
                     }
                     else
-                        _millisecondsPerFrame = 0;
-
-                    // Create report #3 (wheel configuration)
-                    _report3 = NewReport3();
-
-                    // Initialize
-                    Tick();
-
-                    // Done
-                    return;
+                        throw new UnsupportedDeviceException();
                 }
-                throw new UnsupportedDeviceException();
+                else
+                    _millisecondsPerFrame = 0;
+
+                // Create report #3 (wheel configuration)
+                _report3 = NewReport3();
+
+                // Initialize
+                Refresh();
+                // SimHub.Logging.Current.Info("[ESP32SimWheel] Device found");
             } // constructor
 
             // --------------------------------------------------------
             // Private methods in help of the class constructor
             // --------------------------------------------------------
 
-            private static void CheckFeatureReportSizes(ushort dataMinorVersion, short maxFeatureReportSize)
+            private byte[] GetCapabilitiesReport()
+            {
+                byte[] featureReport;
+                if (hidDevice.ReadFeatureData(out featureReport, Constants.RID_FEATURE_CAPABILITIES))
+                {
+                    if (!BitConverter.IsLittleEndian)
+                    {
+                        Array.Reverse(featureReport, 1, 2);
+                        Array.Reverse(featureReport, 3, 2);
+                        Array.Reverse(featureReport, 5, 2);
+                        Array.Reverse(featureReport, 7, 2);
+                        if (featureReport.Length >= Constants.REPORT3_SIZE_V1_1)
+                            Array.Reverse(featureReport, 9, 8);
+                    }
+                    return featureReport;
+                }
+                ThrowIOException();
+                return null;
+            }
+
+            private static void CheckFeatureReportSizes(ushort dataMinorVersion, int maxFeatureReportSize)
             {
                 if ((dataMinorVersion == 0) && (maxFeatureReportSize >= Constants.REPORT3_SIZE_V1_0))
                     return;
@@ -276,7 +309,7 @@ namespace ESP32SimWheel
 
             private static void CheckOutputReportSizes(
                 ushort dataMinorVersion,
-                short maxOutputReportSize)
+                int maxOutputReportSize)
             {
                 if ((dataMinorVersion >= 3) &&
                         (maxOutputReportSize >= Constants.REPORT21_SIZE_V1_3) &&
@@ -557,11 +590,16 @@ namespace ESP32SimWheel
                 return report;
             }
 
+            private static void ThrowIOException()
+            {
+                throw new IOException("Hid device not available");
+            }
+
             // --------------------------------------------------------
             // Private fields (IDevice)
             // --------------------------------------------------------
 
-            internal readonly HidLibrary.IHidDevice hidDevice;
+            internal readonly HidDevice hidDevice;
             private readonly Capabilities _capabilities;
             private readonly HidInfo _hidInfo = new HidInfo();
             private readonly DataVersion _dataVersion;
