@@ -141,6 +141,6 @@ namespace ESP32SimWheel
         ITelemetryData TelemetryData { get; }
         IDpad DPad { get; }
         ulong UniqueID { get; }
-        bool Tick();
+        bool Refresh();
     }
 }

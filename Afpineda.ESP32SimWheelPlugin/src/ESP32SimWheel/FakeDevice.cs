@@ -49,7 +49,7 @@ namespace ESP32SimWheel
         public IDpad DPad { get { return null; } }
         public ulong UniqueID { get; set; }
 
-        public bool Tick()
+        public bool Refresh()
         {
             if (AnimateBitePoint)
             {

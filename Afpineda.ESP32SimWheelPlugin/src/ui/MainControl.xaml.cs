@@ -38,7 +38,6 @@ namespace Afpineda.ESP32SimWheelPlugin
             this.Plugin = plugin;
             SelectDeviceCombo.ItemsSource = AvailableDevices;
             RefreshButton_click(this, null);
-            // ClutchWorkingModeListBox.SelectionChanged += OnSelectClutchWorkingMode;
             _updateTimer = new DispatcherTimer();
             _updateTimer.Tick += new EventHandler(OnTimer);
             _updateTimer.Interval = TimeSpan.FromMilliseconds(250);
@@ -54,7 +53,7 @@ namespace Afpineda.ESP32SimWheelPlugin
             _updating = true;
             try
             {
-                if ((SelectedDevice != null) && SelectedDevice.Tick())
+                if ((SelectedDevice != null) && SelectedDevice.Refresh())
                 {
                     UpdateClutchState(SelectedDevice.Clutch);
                     UpdateSecurityLockState(SelectedDevice.SecurityLock);
@@ -63,6 +62,7 @@ namespace Afpineda.ESP32SimWheelPlugin
             catch (Exception)
             {
                 _updating = false;
+                SimHub.Logging.Current.Info("[ESP32SimWheel] [UI] Current device unavailable");
                 RefreshButton_click(null, null);
             }
             _updating = false;
@@ -149,7 +149,8 @@ namespace Afpineda.ESP32SimWheelPlugin
                 if ((currentDevice != null) && (currentDevice.UniqueID == device.UniqueID))
                     autoSelection = device;
             }
-
+            SelectDeviceCombo.ItemsSource = null;
+            SelectDeviceCombo.ItemsSource = AvailableDevices;
             if (autoSelection != null)
                 SelectDeviceCombo.SelectedItem = autoSelection;
             else if (SelectDeviceCombo.Items.Count > 0)
