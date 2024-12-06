@@ -12,8 +12,19 @@ using GameReaderCommon;
 
 namespace ESP32SimWheel
 {
-    public class FakeDevice : ESP32SimWheel.IDevice, ESP32SimWheel.ITelemetryData
+    public class FakeDevice :
+        ESP32SimWheel.IDevice,
+        ESP32SimWheel.ITelemetryData,
+        ESP32SimWheel.IClutch,
+        ESP32SimWheel.ISecurityLock
     {
+        // --------------------------------------------------------
+        // Device simulation
+        // --------------------------------------------------------
+
+        public bool AnimateBitePoint { get; set; } = false;
+        public bool AnimateClutchWorkingMode { get; set; } = false;
+
         // --------------------------------------------------------
         // IDevice implementation
         // --------------------------------------------------------
@@ -21,9 +32,9 @@ namespace ESP32SimWheel
         public Capabilities Capabilities { get { return _capabilities; } set { _capabilities = value; } }
         public HidInfo HidInfo { get { return _hidInfo; } set { _hidInfo = value; } }
         public DataVersion DataVersion { get { return _dataVersion; } set { _dataVersion = value; } }
-        public IClutch Clutch { get { return null; } }
+        public IClutch Clutch { get { return this; } }
         public IAnalogClutch AnalogClutch { get { return null; } }
-        public ISecurityLock SecurityLock { get { return null; } }
+        public ISecurityLock SecurityLock { get { return this; } }
         public IBattery Battery { get { return null; } }
         public ITelemetryData TelemetryData
         {
@@ -38,12 +49,31 @@ namespace ESP32SimWheel
         public IDpad DPad { get { return null; } }
         public ulong UniqueID { get; set; }
 
+        public bool Tick()
+        {
+            if (AnimateBitePoint)
+            {
+                _bitePoint = (byte)(_bitePoint + 1);
+                if (_bitePoint == 255)
+                    _bitePoint = 0;
+            }
+            if (AnimateClutchWorkingMode)
+            {
+                if (_clutchWorkingMode == ClutchWorkingModes.Button)
+                    _clutchWorkingMode = ClutchWorkingModes.Clutch;
+                else
+                    _clutchWorkingMode = _clutchWorkingMode + 1;
+            }
+            return AnimateBitePoint || AnimateClutchWorkingMode;
+        }
+
         // --------------------------------------------------------
         // Constructor
         // --------------------------------------------------------
 
         public FakeDevice(ulong UniqueID = 0, string name = "Fake device")
         {
+            this.UniqueID = UniqueID;
             this._hidInfo.VendorID = 0;
             this._hidInfo.ProductID = 0;
             this._hidInfo.Path = "";
@@ -52,6 +82,12 @@ namespace ESP32SimWheel
             this._dataVersion.Major = 1;
             this._dataVersion.Minor = ESP32SimWheel.V1.Constants.SUPPORTED_MINOR_VERSION;
         }
+
+        // --------------------------------------------------------
+        // ISecurityLock implementation
+        // --------------------------------------------------------
+
+        public bool IsLocked { get; set; } = false;
 
         // --------------------------------------------------------
         // ITelemetryData implementation
@@ -75,11 +111,44 @@ namespace ESP32SimWheel
         }
 
         // --------------------------------------------------------
+        // IClutch implementation
+        // --------------------------------------------------------
+
+        public ClutchWorkingModes ClutchWorkingMode
+        {
+            get { return _clutchWorkingMode; }
+            set
+            {
+                _clutchWorkingMode = value;
+                SimHub.Logging.Current.InfoFormat(
+                    "[FakeDeviceESP32] Clutch working mode = {0}",
+                    _clutchWorkingMode);
+            }
+        }
+        public byte BitePoint
+        {
+            get { return _bitePoint; }
+            set
+            {
+                if (_bitePoint < 255)
+                {
+                    _bitePoint = value;
+                    SimHub.Logging.Current.InfoFormat(
+                        "[FakeDeviceESP32] Bite point = {0}",
+                        _bitePoint);
+                }
+            }
+        }
+
+        private ClutchWorkingModes _clutchWorkingMode = ClutchWorkingModes.Clutch;
+        private byte _bitePoint = 0;
+
+        // --------------------------------------------------------
         // Private fields
         // --------------------------------------------------------
 
         private HidInfo _hidInfo = new HidInfo();
         private DataVersion _dataVersion = new DataVersion();
-        private Capabilities _capabilities = new Capabilities(0,0);
+        private Capabilities _capabilities = new Capabilities(0, 0);
     }
 } // namespace ESP32SimWheel

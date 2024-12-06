@@ -66,6 +66,15 @@ namespace ESP32SimWheel
             {
                 fake = new FakeDevice(1, "Fake clutch device");
                 fake.Capabilities = new Capabilities(0x0002, 0);
+                fake.AnimateBitePoint = true;
+                FakeDevices.Add(fake);
+            }
+            if (count > 2)
+            {
+                fake = new FakeDevice(2, "Fake locked device");
+                fake.Capabilities = new Capabilities(0x0002, 0);
+                fake.AnimateClutchWorkingMode = true;
+                fake.IsLocked = true;
                 FakeDevices.Add(fake);
             }
         }

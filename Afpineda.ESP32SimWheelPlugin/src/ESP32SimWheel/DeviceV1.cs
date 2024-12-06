@@ -10,6 +10,7 @@
 using System;
 using System.Text;
 using System.Diagnostics;
+using System.Linq;
 using HidLibrary;
 using SimHub;
 using GameReaderCommon;
@@ -18,8 +19,20 @@ namespace ESP32SimWheel
 {
     namespace V1
     {
-        public class Device : ESP32SimWheel.IDevice, ESP32SimWheel.ITelemetryData
+        public class Device :
+            ESP32SimWheel.IDevice,
+            ESP32SimWheel.ITelemetryData,
+            ESP32SimWheel.IClutch
         {
+            // --------------------------------------------------------
+            // String representation
+            // --------------------------------------------------------
+
+            public override string ToString()
+            {
+                return HidInfo.DisplayName;
+            }
+
             // --------------------------------------------------------
             // IDevice implementation
             // --------------------------------------------------------
@@ -27,7 +40,16 @@ namespace ESP32SimWheel
             public Capabilities Capabilities { get { return _capabilities; } }
             public HidInfo HidInfo { get { return _hidInfo; } }
             public DataVersion DataVersion { get { return _dataVersion; } }
-            public IClutch Clutch { get { return null; } }
+            public IClutch Clutch
+            {
+                get
+                {
+                    if (_capabilities.HasClutch)
+                        return this;
+                    else
+                        return null;
+                }
+            }
             public IAnalogClutch AnalogClutch { get { return null; } }
             public ISecurityLock SecurityLock { get { return null; } }
             public IBattery Battery { get { return null; } }
@@ -43,6 +65,51 @@ namespace ESP32SimWheel
             }
             public IDpad DPad { get { return null; } }
             public ulong UniqueID { get; private set; }
+
+            public bool Tick()
+            {
+                byte[] newReport3;
+                bool changed = false;
+                hidDevice.OpenDevice();
+                if (hidDevice.ReadFeatureData(out newReport3, 3))
+                {
+                    if (!Enumerable.SequenceEqual(newReport3, _report3))
+                        changed = true;
+                    _report3 = newReport3;
+                }
+                return changed;
+            }
+
+            // --------------------------------------------------------
+            // IClutch implementation
+            // --------------------------------------------------------
+
+            public ClutchWorkingModes ClutchWorkingMode
+            {
+                get { return (ClutchWorkingModes)_report3[1]; }
+                set
+                {
+                    byte[] newReport3 = NewReport3();
+                    newReport3[1] = (byte)value;
+                    hidDevice.OpenDevice();
+                    hidDevice.WriteFeatureData(newReport3);
+                }
+            }
+
+            public byte BitePoint
+            {
+                get { return _report3[3]; }
+                set
+                {
+                    if (value < 255)
+                    {
+                        byte[] newReport3 = NewReport3();
+                        newReport3[3] = value;
+                        hidDevice.OpenDevice();
+                        hidDevice.WriteFeatureData(newReport3);
+                    }
+                }
+            }
 
             // --------------------------------------------------------
             // ITelemetryData implementation
@@ -142,8 +209,8 @@ namespace ESP32SimWheel
                         Utils.GetHidDisplayName(
                             hidDevice.Attributes.VendorId,
                             hidDevice.Attributes.ProductId);
-                    if (oemDisplayName==null)
-                        _hidInfo.DisplayName = string.Format("S/N:{0,16:X16}",UniqueID);
+                    if (oemDisplayName == null)
+                        _hidInfo.DisplayName = string.Format("S/N:{0,16:X16}", UniqueID);
                     else
                         _hidInfo.DisplayName = oemDisplayName;
 
@@ -179,6 +246,12 @@ namespace ESP32SimWheel
                     }
                     else
                         _millisecondsPerFrame = 0;
+
+                    // Create report #3 (wheel configuration)
+                    _report3 = NewReport3();
+
+                    // Initialize
+                    Tick();
 
                     // Done
                     return;
@@ -258,6 +331,17 @@ namespace ESP32SimWheel
                 }
             }
 
+            private static short GetReport3Size(ushort dataMinorVersion)
+            {
+                if (dataMinorVersion >= 2)
+                {
+                    return Constants.REPORT3_SIZE_V1_2;
+                }
+                else if (dataMinorVersion == 1)
+                    return Constants.REPORT3_SIZE_V1_1;
+                else
+                    return Constants.REPORT3_SIZE_V1_0;
+            }
 
             // --------------------------------------------------------
             // Private methods (ITelemetryData)
@@ -458,6 +542,19 @@ namespace ESP32SimWheel
                     data.Fuel,
                     out _gaugesReport[11],
                     out _gaugesReport[12]);
+            }
+
+            // --------------------------------------------------------
+            // Private fields and methods
+            // --------------------------------------------------------
+
+            private byte[] _report3;
+
+            private byte[] NewReport3()
+            {
+                byte[] report = Enumerable.Repeat<byte>(0xFF, GetReport3Size(_dataVersion.Minor)).ToArray();
+                report[0] = 3;
+                return report;
             }
 
             // --------------------------------------------------------

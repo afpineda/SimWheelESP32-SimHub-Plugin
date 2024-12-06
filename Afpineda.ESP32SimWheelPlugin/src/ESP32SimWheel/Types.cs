@@ -103,7 +103,7 @@ namespace ESP32SimWheel
 
     public interface ISecurityLock
     {
-        bool isLocked { get; }
+        bool IsLocked { get; }
     }
 
     public interface IAltButtons
@@ -141,5 +141,6 @@ namespace ESP32SimWheel
         ITelemetryData TelemetryData { get; }
         IDpad DPad { get; }
         ulong UniqueID { get; }
+        bool Tick();
     }
 }

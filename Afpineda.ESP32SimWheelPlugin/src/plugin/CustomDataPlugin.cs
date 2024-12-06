@@ -96,7 +96,8 @@ namespace Afpineda.ESP32SimWheelPlugin
         /// <returns></returns>
         public System.Windows.Controls.Control GetWPFSettingsControl(PluginManager pluginManager)
         {
-            return new CustomSettingsControl(this);
+            System.Windows.Controls.Control mainControl = new MainControl(this);
+            return mainControl;
         }
 
         /// <summary>
@@ -120,7 +121,7 @@ namespace Afpineda.ESP32SimWheelPlugin
         }
 
         private bool _refreshDeviceList = true;
-        private IEnumerable<ESP32SimWheel.IDevice> _devices;
 
+        private IEnumerable<ESP32SimWheel.IDevice> _devices;
     }
 }
