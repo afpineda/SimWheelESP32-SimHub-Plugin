@@ -24,7 +24,8 @@ namespace ESP32SimWheel
             ESP32SimWheel.IDevice,
             ESP32SimWheel.ITelemetryData,
             ESP32SimWheel.IClutch,
-            ESP32SimWheel.ISecurityLock
+            ESP32SimWheel.ISecurityLock,
+            ESP32SimWheel.IBattery
         {
             // --------------------------------------------------------
             // String representation
@@ -54,7 +55,18 @@ namespace ESP32SimWheel
             }
             public IAnalogClutch AnalogClutch { get { return null; } }
             public ISecurityLock SecurityLock { get { return this; } }
-            public IBattery Battery { get { return null; } }
+
+            public IBattery Battery
+            {
+                get
+                {
+                    if (_capabilities.HasBattery)
+                        return this;
+                    else
+                        return null;
+                }
+            }
+
             public ITelemetryData TelemetryData
             {
                 get
@@ -65,6 +77,7 @@ namespace ESP32SimWheel
                         return null;
                 }
             }
+
             public IDpad DPad { get { return null; } }
             public ulong UniqueID { get; private set; }
 
@@ -82,6 +95,26 @@ namespace ESP32SimWheel
                 }
                 ThrowIOException();
                 return false;
+            }
+
+            // --------------------------------------------------------
+            // IBattery implementation
+            // --------------------------------------------------------
+
+            public void ForceBatteryCalibration()
+            {
+                throw new NotImplementedException();
+            }
+
+            public byte BatteryLevel
+            {
+                get
+                {
+                    if (_capabilities.HasBattery)
+                        return _report3[4];
+                    else
+                        return 0;
+                }
             }
 
             // --------------------------------------------------------

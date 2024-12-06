@@ -126,7 +126,6 @@ namespace ESP32SimWheel
     {
         void ForceBatteryCalibration();
         byte BatteryLevel { get; }
-        bool IsFactoryCalibrated { get; }
     }
 
     public interface IDevice

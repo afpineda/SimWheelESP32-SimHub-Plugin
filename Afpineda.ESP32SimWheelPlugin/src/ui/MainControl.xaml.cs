@@ -55,6 +55,7 @@ namespace Afpineda.ESP32SimWheelPlugin
             {
                 if ((SelectedDevice != null) && SelectedDevice.Refresh())
                 {
+                    UpdateBatteryState(SelectedDevice.Battery);
                     UpdateClutchState(SelectedDevice.Clutch);
                     UpdateSecurityLockState(SelectedDevice.SecurityLock);
                 }
@@ -75,6 +76,14 @@ namespace Afpineda.ESP32SimWheelPlugin
                 SecurityLockText.Text = "Disabled";
             else
                 SecurityLockText.Text = "⚠ Enabled";
+        }
+
+        private void UpdateBatteryState(ESP32SimWheel.IBattery battery)
+        {
+            if (battery == null)
+                BatteryText.Text = "Not available";
+            else
+                BatteryText.Text = string.Format("{0:D}%", battery.BatteryLevel);
         }
 
         private void UpdateClutchState(ESP32SimWheel.IClutch clutch)
@@ -101,7 +110,7 @@ namespace Afpineda.ESP32SimWheelPlugin
             if (device != null)
                 try
                 {
-                    SimHub.Logging.Current.InfoFormat("[ESP32Simwheel] Device selected: {0}", device.HidInfo.DisplayName);
+                    SimHub.Logging.Current.InfoFormat("[ESP32Simwheel] [UI] Device selected: {0}", device.HidInfo.DisplayName);
                     HidInfoText.Text = string.Format("{0,4:X4} / {1,4:X4}",
                         device.HidInfo.VendorID,
                         device.HidInfo.ProductID);
@@ -114,6 +123,7 @@ namespace Afpineda.ESP32SimWheelPlugin
                         TelemetryDataText.Text = string.Format("Yes ({0} frames per second)", device.Capabilities.FramesPerSecond);
                     else
                         TelemetryDataText.Text = "No";
+                    UpdateBatteryState(device.Battery);
                     UpdateSecurityLockState(device.SecurityLock);
                     TabVisible(ClutchPage, device.Capabilities.HasClutch);
                     MainPages.SelectedIndex = 0;

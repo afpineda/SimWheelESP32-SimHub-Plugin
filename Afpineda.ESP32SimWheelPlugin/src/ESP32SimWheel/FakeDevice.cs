@@ -16,7 +16,8 @@ namespace ESP32SimWheel
         ESP32SimWheel.IDevice,
         ESP32SimWheel.ITelemetryData,
         ESP32SimWheel.IClutch,
-        ESP32SimWheel.ISecurityLock
+        ESP32SimWheel.ISecurityLock,
+        ESP32SimWheel.IBattery
     {
         // --------------------------------------------------------
         // Device simulation
@@ -35,7 +36,7 @@ namespace ESP32SimWheel
         public IClutch Clutch { get { return this; } }
         public IAnalogClutch AnalogClutch { get { return null; } }
         public ISecurityLock SecurityLock { get { return this; } }
-        public IBattery Battery { get { return null; } }
+        public IBattery Battery { get { if (_capabilities.HasBattery) return this; else return null; } }
         public ITelemetryData TelemetryData
         {
             get
@@ -64,7 +65,16 @@ namespace ESP32SimWheel
                 else
                     _clutchWorkingMode = _clutchWorkingMode + 1;
             }
-            return AnimateBitePoint || AnimateClutchWorkingMode;
+            if (AnimateBatteryLevel)
+            {
+                if (BatteryLevel <= 100)
+                    BatteryLevel++;
+                else
+                    BatteryLevel = 0;
+            }
+            return AnimateBitePoint ||
+                   AnimateClutchWorkingMode ||
+                   AnimateBatteryLevel;
         }
 
         // --------------------------------------------------------
@@ -82,6 +92,19 @@ namespace ESP32SimWheel
             this._dataVersion.Major = 1;
             this._dataVersion.Minor = ESP32SimWheel.V1.Constants.SUPPORTED_MINOR_VERSION;
         }
+
+        // --------------------------------------------------------
+        // IBattery implementation
+        // --------------------------------------------------------
+
+        public void ForceBatteryCalibration()
+        {
+            SimHub.Logging.Current.Info("[FakeDeviceESP32] ForceBatteryCalibration()");
+        }
+
+        public byte BatteryLevel { get; set; } = 0;
+
+        public bool AnimateBatteryLevel { get; set; } = false;
 
         // --------------------------------------------------------
         // ISecurityLock implementation

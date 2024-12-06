@@ -41,6 +41,12 @@
                                   x:Name="InfoPage">
                     <StackPanel>
                         <styles:SHTitledGroup Margin="0,10,10,10"
+                                              Title="Security Lock">
+                            <TextBlock x:Name="SecurityLockText">
+                                none
+                            </TextBlock>
+                        </styles:SHTitledGroup>
+                        <styles:SHTitledGroup Margin="0,10,10,10"
                                               Title="VendorID / Product ID">
                             <TextBlock x:Name="HidInfoText">
                                 xxxx / yyyy
@@ -65,8 +71,8 @@
                             </TextBlock>
                         </styles:SHTitledGroup>
                         <styles:SHTitledGroup Margin="0,10,10,10"
-                                              Title="Security Lock">
-                            <TextBlock x:Name="SecurityLockText">
+                                              Title="Battery">
+                            <TextBlock x:Name="BatteryText">
                                 none
                             </TextBlock>
                         </styles:SHTitledGroup>
