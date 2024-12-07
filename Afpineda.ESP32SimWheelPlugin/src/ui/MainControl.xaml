@@ -88,57 +88,63 @@
                 </styles:SHTabItem>
                 <styles:SHTabItem Header="Clutch paddles"
                                   x:Name="ClutchPage">
-                    <StackPanel x:Name="ClutchPaddlesGroup">
+                    <StackPanel>
                         <TextBlock />
-                        <StackPanel Orientation="Horizontal">
+                        <DockPanel>
                             <styles:SHToggleCheckbox Margin="1,0,40,0"
-                                                     x:Name="LinkToCarCheckbox">
-                                Link to game and car
+                                                     x:Name="BindToGameCarCheckbox"
+                                                     Checked="OnBindToGameCarChanged"
+                                                     Unchecked="OnBindToGameCarChanged">
+                                Bind to current game and car
                             </styles:SHToggleCheckbox>
-                            <TextBlock VerticalAlignment="Center">
-                                <Bold>Game/Car: </Bold>
-                            </TextBlock>
-                            <Label x:Name="GameCarLabel">(none)</Label>
+                            <StackPanel Orientation="Horizontal"
+                                        DockPanel.Dock="Right">
+                                <TextBlock VerticalAlignment="Center"
+                                           Margin="0,0,20,0">
+                                    <Bold>Game / Car:</Bold>
+                                </TextBlock>
+                                <TextBlock VerticalAlignment="Center"
+                                           x:Name="GameAndCarText">
+                                    ??? / ???
+                                </TextBlock>
+                            </StackPanel>
+                            <TextBlock />
+                        </DockPanel>
+                        <StackPanel x:Name="ClutchPaddlesGroup">
+                            <styles:SHSectionSeparator />
+                            <styles:SHExpander IsExpanded="True">
+                                <styles:SHExpander.Header>
+                                    Working mode
+                                </styles:SHExpander.Header>
+                                <styles:SHListBox x:Name="ClutchWorkingModeListBox"
+                                                  SelectionChanged="OnClutchWorkingModeChanged"
+                                                  Padding="10,10,10,10">
+                                    <ListBoxItem IsSelected="true"
+                                                 x:Name="CWMItem_Clutch">Clutch</ListBoxItem>
+                                    <ListBoxItem x:Name="CWMItem_Axis">Axis</ListBoxItem>
+                                    <ListBoxItem x:Name="CWMItem_Alt">Alternate mode</ListBoxItem>
+                                    <ListBoxItem x:Name="CWMItem_Button">Regular button</ListBoxItem>
+                                </styles:SHListBox>
+                            </styles:SHExpander>
+                            <styles:SHSectionSeparator />
+                            <styles:SHExpander IsExpanded="True"
+                                               Padding="20,10,20,10">
+                                <styles:SHExpander.Header>
+                                    Bite point
+                                </styles:SHExpander.Header>
+                                <Slider x:Name="BitePointSlider"
+                                        Maximum="254"
+                                        Minimum="0"
+                                        Value="0"
+                                        ValueChanged="OnBitePointSliderChanged" />
+                            </styles:SHExpander>
                         </StackPanel>
-                        <styles:SHSectionSeparator />
-                        <styles:SHExpander IsExpanded="True">
-                            <styles:SHExpander.Header>
-                                Working mode
-                            </styles:SHExpander.Header>
-                            <styles:SHListBox x:Name="ClutchWorkingModeListBox"
-                                              SelectionChanged="ClutchWorkingModeListBoxChanged"
-                                              Padding="10,10,10,10">
-                                <ListBoxItem IsSelected="true"
-                                             x:Name="CWMItem_Clutch">Clutch</ListBoxItem>
-                                <ListBoxItem x:Name="CWMItem_Axis">Axis</ListBoxItem>
-                                <ListBoxItem x:Name="CWMItem_Alt">Alternate mode</ListBoxItem>
-                                <ListBoxItem x:Name="CWMItem_Button">Regular button</ListBoxItem>
-                            </styles:SHListBox>
-                        </styles:SHExpander>
-                        <styles:SHSectionSeparator />
-                        <styles:SHExpander IsExpanded="True"
-                                           Padding="20,10,20,10">
-                            <styles:SHExpander.Header>
-                                Bite point
-                            </styles:SHExpander.Header>
-                            <Slider x:Name="BitePointSlider"
-                                    Maximum="254"
-                                    Minimum="0"
-                                    Value="0"
-                                    ValueChanged="OnBitePointSliderChanged" />
-                        </styles:SHExpander>
-                        <!-- <ui:TitledSlider x:Name="BitePointSlider"
-                                         Title="Bite point"
-                                         Maximum="254"
-                                         Minimum="0"
-                                         Value="0"
-                                         ValueChanged="OnBitePointSliderChanged" /> -->
                     </StackPanel>
                 </styles:SHTabItem>
-                <styles:SHTabItem Header="LEDs"
+                <!-- <styles:SHTabItem Header="LEDs"
                                   x:Name="LedsPage">
                     <StackPanel />
-                </styles:SHTabItem>
+                </styles:SHTabItem> -->
             </styles:SHTabControl>
         </StackPanel>
     </ScrollViewer>

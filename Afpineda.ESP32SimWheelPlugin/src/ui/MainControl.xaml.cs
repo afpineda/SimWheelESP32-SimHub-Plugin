@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
+// using System.Windows.Forms;
 using SimHub.Plugins.Styles;
 using ESP32SimWheel;
 
@@ -21,7 +22,7 @@ namespace Afpineda.ESP32SimWheelPlugin
     /// Custom settings page
     /// </summary>
     ///
-    public partial class MainControl : UserControl
+    public partial class MainControl : System.Windows.Controls.UserControl
     {
 
         // --------------------------------------------------------
@@ -33,10 +34,12 @@ namespace Afpineda.ESP32SimWheelPlugin
             InitializeComponent();
         }
 
-        public MainControl(CustomDataPlugin plugin) : this()
+        public MainControl(ESP32SimWheelPlugin plugin) : this()
         {
             this.Plugin = plugin;
             SelectDeviceCombo.ItemsSource = AvailableDevices;
+            BindToGameCarCheckbox.IsChecked = Plugin.Settings.BindToGameAndCar;
+            OnGameCarChange("", "");
             RefreshButton_click(this, null);
             _updateTimer = new DispatcherTimer();
             _updateTimer.Tick += new EventHandler(OnTimer);
@@ -50,26 +53,45 @@ namespace Afpineda.ESP32SimWheelPlugin
 
         private void OnTimer(object sender, EventArgs e)
         {
-            _updating = true;
-            try
+
+            if (SelectDeviceCombo.ItemsSource == null)
+                return;
+
+            // if a device is selected, read device state and
+            // update UI elements only if there are changes
+            if ((SelectedDevice != null) && SelectedDevice.Refresh())
             {
-                if ((SelectedDevice != null) && SelectedDevice.Refresh())
-                {
-                    UpdateBatteryState(SelectedDevice.Battery);
-                    UpdateClutchState(SelectedDevice.Clutch);
-                    UpdateSecurityLockState(SelectedDevice.SecurityLock);
-                }
+                UpdateUIFromDeviceState();
+                if (SelectedDevice.Clutch != null)
+                    Plugin.Settings.SaveClutchSettingsWhenNeeded(
+                        SelectedDevice.UniqueID,
+                        _currentGame,
+                        _currentCar,
+                        SelectedDevice.Clutch.BitePoint,
+                        SelectedDevice.Clutch.ClutchWorkingMode);
             }
-            catch (Exception)
-            {
-                _updating = false;
-                SimHub.Logging.Current.Info("[ESP32SimWheel] [UI] Current device unavailable");
-                RefreshButton_click(null, null);
-            }
-            _updating = false;
+
         }
 
-        private void UpdateSecurityLockState(ESP32SimWheel.ISecurityLock sLock)
+        private void UpdateUIFromDeviceState()
+        {
+            if (SelectedDevice != null)
+                try
+                {
+                    _updating = true;
+                    UpdateUIFromBatteryState(SelectedDevice.Battery);
+                    UpdateUIFromClutchState(SelectedDevice.Clutch);
+                    UpdateUIFromSecurityLockState(SelectedDevice.SecurityLock);
+                    _updating = false;
+                }
+                catch (Exception)
+                {
+                    _updating = false;
+                    RefreshButton_click(null, null);
+                }
+        }
+
+        private void UpdateUIFromSecurityLockState(ESP32SimWheel.ISecurityLock sLock)
         {
             ClutchPaddlesGroup.IsEnabled = (sLock == null) || !sLock.IsLocked;
             if (ClutchPaddlesGroup.IsEnabled)
@@ -78,7 +100,7 @@ namespace Afpineda.ESP32SimWheelPlugin
                 SecurityLockText.Text = "⚠ Enabled";
         }
 
-        private void UpdateBatteryState(ESP32SimWheel.IBattery battery)
+        private void UpdateUIFromBatteryState(ESP32SimWheel.IBattery battery)
         {
             if (battery == null)
                 BatteryText.Text = "Not available";
@@ -86,58 +108,81 @@ namespace Afpineda.ESP32SimWheelPlugin
                 BatteryText.Text = string.Format("{0:D}%", battery.BatteryLevel);
         }
 
-        private void UpdateClutchState(ESP32SimWheel.IClutch clutch)
+        private void UpdateUIFromClutchState(ESP32SimWheel.IClutch clutch)
         {
             if (clutch != null)
             {
-                BitePointSlider.Value = SelectedDevice.Clutch.BitePoint;
+                BitePointSlider.Value = clutch.BitePoint;
                 ClutchWorkingModeListBox.UnselectAll();
                 ListBoxItem item = (ListBoxItem)
                     ClutchWorkingModeListBox.
                         ItemContainerGenerator.
                             ContainerFromIndex((int)clutch.ClutchWorkingMode);
-                item.IsSelected = true;
+                if (item != null)
+                    item.IsSelected = true;
+                BitePointSlider.IsEnabled =
+                    (clutch.ClutchWorkingMode == ClutchWorkingModes.Clutch);
             }
         }
 
         // --------------------------------------------------------
         // UI Event callbacks
+        // (triggered by user interaction)
         // --------------------------------------------------------
 
         private void OnSelectDevice(object sender, SelectionChangedEventArgs args)
         {
-            var device = ((sender as ComboBox).SelectedItem as ESP32SimWheel.IDevice);
-            if (device != null)
+            if (SelectedDevice != null)
                 try
                 {
-                    SimHub.Logging.Current.InfoFormat("[ESP32Simwheel] [UI] Device selected: {0}", device.HidInfo.DisplayName);
+                    SimHub.Logging.Current.InfoFormat("[ESP32Simwheel] [UI] Device selected: {0}", SelectedDevice.HidInfo.DisplayName);
+
+                    // Update static UI elements (not dependant on device state)
+                    TabVisible(InfoPage, true);
                     HidInfoText.Text = string.Format("{0,4:X4} / {1,4:X4}",
-                        device.HidInfo.VendorID,
-                        device.HidInfo.ProductID);
+                        SelectedDevice.HidInfo.VendorID,
+                        SelectedDevice.HidInfo.ProductID);
                     DataVersionText.Text = string.Format("{0}.{1}",
-                        device.DataVersion.Major,
-                        device.DataVersion.Minor);
+                        SelectedDevice.DataVersion.Major,
+                        SelectedDevice.DataVersion.Minor);
                     DeviceIDText.Text = string.Format("{0,16:X16}",
-                        device.UniqueID);
-                    if (device.Capabilities.UsesTelemetryData)
-                        TelemetryDataText.Text = string.Format("Yes ({0} frames per second)", device.Capabilities.FramesPerSecond);
+                        SelectedDevice.UniqueID);
+                    if (SelectedDevice.Capabilities.UsesTelemetryData)
+                        TelemetryDataText.Text = string.Format("Yes ({0} frames per second)", SelectedDevice.Capabilities.FramesPerSecond);
                     else
                         TelemetryDataText.Text = "No";
-                    UpdateBatteryState(device.Battery);
-                    UpdateSecurityLockState(device.SecurityLock);
-                    TabVisible(ClutchPage, device.Capabilities.HasClutch);
+                    TabVisible(ClutchPage, SelectedDevice.Capabilities.HasClutch);
                     MainPages.SelectedIndex = 0;
+
+                    // Send stored clutch state to device if needed
+                    if (Plugin.Settings.BindToGameAndCar)
+                        LoadClutchSettingsIntoDevice();
+
+                    // Read device state and update dynamic UI elements
+                    SelectedDevice.Refresh();
+                    UpdateUIFromDeviceState();
                 }
                 catch (Exception)
                 {
+                    // Device disconnected, reload device list
                     RefreshButton_click(null, null);
                 }
+            else
+            {
+                // No device is selected (or no devices are available)
+                SimHub.Logging.Current.Info("[ESP32Simwheel] [UI] No device selected");
+                TabVisible(InfoPage, false);
+                TabVisible(ClutchPage, false);
+            }
         }
 
         private void OnBitePointSliderChanged(object sender, RoutedPropertyChangedEventArgs<double> args)
         {
             args.Handled = true;
-            if ((SelectedDevice != null) && (SelectedDevice.Clutch != null) && !_updating)
+            if ((SelectedDevice == null) || (SelectedDevice.Clutch == null))
+                return;
+            if (!_updating)
+                // propagate UI -> device
                 try
                 {
                     SelectedDevice.Clutch.BitePoint = (byte)BitePointSlider.Value;
@@ -150,8 +195,11 @@ namespace Afpineda.ESP32SimWheelPlugin
 
         private void RefreshButton_click(object sender, System.Windows.RoutedEventArgs e)
         {
-            ESP32SimWheel.IDevice currentDevice = SelectDeviceCombo.SelectedItem as ESP32SimWheel.IDevice;
+            // Remember current device selection
+            ESP32SimWheel.IDevice currentDevice = SelectedDevice;
             ESP32SimWheel.IDevice autoSelection = null;
+
+            // Recreate device list
             AvailableDevices.Clear();
             foreach (var device in Devices.Enumerate())
             {
@@ -159,17 +207,25 @@ namespace Afpineda.ESP32SimWheelPlugin
                 if ((currentDevice != null) && (currentDevice.UniqueID == device.UniqueID))
                     autoSelection = device;
             }
+
+            // Trick to force UI update
             SelectDeviceCombo.ItemsSource = null;
             SelectDeviceCombo.ItemsSource = AvailableDevices;
+
+            // Restore previous device selection, if any
             if (autoSelection != null)
                 SelectDeviceCombo.SelectedItem = autoSelection;
             else if (SelectDeviceCombo.Items.Count > 0)
+                // Or select the first available device, if any
                 SelectDeviceCombo.SelectedIndex = 0;
+            else
+                // Disable user interface, since there are no devices
+                OnSelectDevice(null, null);
+            SelectDeviceCombo.IsEnabled = (SelectDeviceCombo.Items.Count > 0);
         }
 
-        private void ClutchWorkingModeListBoxChanged(object sender, SelectionChangedEventArgs e)
+        private void OnClutchWorkingModeChanged(object sender, SelectionChangedEventArgs e)
         {
-            e.Handled = true;
             if ((SelectedDevice != null) && (SelectedDevice.Clutch != null) && !_updating)
                 foreach (ClutchWorkingModes workingMode in Enum.GetValues(typeof(ClutchWorkingModes)))
                 {
@@ -177,10 +233,11 @@ namespace Afpineda.ESP32SimWheelPlugin
                         ClutchWorkingModeListBox.
                             ItemContainerGenerator.
                                 ContainerFromIndex((int)workingMode);
-                    if (item.IsSelected)
+                    if ((item != null) && item.IsSelected)
                         try
                         {
                             SelectedDevice.Clutch.ClutchWorkingMode = workingMode;
+                            BitePointSlider.IsEnabled = (workingMode == ClutchWorkingModes.Clutch);
                             return;
                         }
                         catch (Exception)
@@ -191,25 +248,68 @@ namespace Afpineda.ESP32SimWheelPlugin
                 }
         }
 
+        private void OnBindToGameCarChanged(object sender, RoutedEventArgs e)
+        {
+            Plugin.Settings.BindToGameAndCar = BindToGameCarCheckbox.IsChecked ?? false;
+            if ((SelectedDevice != null) && (_currentGame.Length > 0) && (_currentCar.Length > 0))
+            {
+                if (Plugin.Settings.BindToGameAndCar)
+                    LoadClutchSettingsIntoDevice();
+                else
+                {
+                    // var choice = SHMessageBox.Show(
+                    //     "Discard the saved bite point for this game and this car?",
+                    //     string.Format("{0} / {1}", _currentGame, _currentCar),
+                    //     System.Windows.MessageBoxButton.OKCancel,
+                    //     System.Windows.MessageBoxImage.Question).
+                    //         GetAwaiter().GetResult();
+                    var choice = System.Windows.MessageBox.Show(
+                        "Discard the saved clutch settings for this game and this car?",
+                        string.Format("{0} / {1}", _currentGame, _currentCar),
+                        System.Windows.MessageBoxButton.YesNo,
+                        System.Windows.MessageBoxImage.Question);
+                    if (choice == MessageBoxResult.Yes)
+                        // if (choice == DialogResult.Yes)
+                        Plugin.Settings.RemoveClutchSettings(SelectedDevice.UniqueID, _currentGame, _currentCar);
+                }
+            }
+        }
+
         // --------------------------------------------------------
-        // UI Bindings
+        // Plugin callbacks (called from CustomDataPlugin)
         // --------------------------------------------------------
+
+        public void OnGameCarChange(string game, string car)
+        {
+            _currentGame = game;
+            _currentCar = car;
+            if ((game.Length == 0) || (car.Length == 0))
+                GameAndCarText.Text = "none";
+            else
+                GameAndCarText.Text = string.Format(
+                    "{0} / {1}",
+                    game,
+                    car);
+            if ((SelectedDevice != null) && (SelectedDevice.Clutch != null) && Plugin.Settings.BindToGameAndCar)
+                LoadClutchSettingsIntoDevice();
+        }
 
         // --------------------------------------------------------
         // Auxiliary methods
         // --------------------------------------------------------
 
+        // Show or hid tab pages
         private void TabVisible(SimHub.Plugins.Styles.SHTabItem tabPage, bool visible)
         {
             if (tabPage.Parent == null)
             {
                 if (visible)
                 {
-                    int idx = 0;
+                    int idx = 0; // tabPage == InfoPage
                     if (tabPage == ClutchPage)
                         idx = 1;
-                    else if (tabPage == LedsPage)
-                        idx = 2;
+                    // else if (tabPage == LedsPage)
+                    //     idx = 2;
                     MainPages.Items.Insert(idx, tabPage);
                 }
             }
@@ -220,12 +320,31 @@ namespace Afpineda.ESP32SimWheelPlugin
             }
         }
 
+        private void LoadClutchSettingsIntoDevice()
+        {
+            byte? bitePoint;
+            ClutchWorkingModes? workingMode;
+            Plugin.Settings.LoadClutchSettings(
+                SelectedDevice.UniqueID,
+                _currentGame,
+                _currentCar,
+                out bitePoint,
+                out workingMode
+            );
+            if (bitePoint != null)
+                SelectedDevice.Clutch.BitePoint = (byte)bitePoint;
+            if (workingMode != null)
+                SelectedDevice.Clutch.ClutchWorkingMode = (ClutchWorkingModes)workingMode;
+        }
+
         // --------------------------------------------------------
         // Private Fields and properties
         // --------------------------------------------------------
 
         private bool _updating = false;
         private readonly DispatcherTimer _updateTimer;
+        private string _currentGame = "";
+        private string _currentCar = "";
 
         private ESP32SimWheel.IDevice SelectedDevice
         {
@@ -233,7 +352,7 @@ namespace Afpineda.ESP32SimWheelPlugin
         }
 
         private readonly List<ESP32SimWheel.IDevice> AvailableDevices = new List<ESP32SimWheel.IDevice>();
-        public CustomDataPlugin Plugin { get; }
+        public ESP32SimWheelPlugin Plugin { get; }
 
     } // classMainControl
 } //namespace Afpineda.ESP32SimWheelPlugin

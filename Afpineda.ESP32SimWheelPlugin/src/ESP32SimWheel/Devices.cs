@@ -64,7 +64,7 @@ namespace ESP32SimWheel
             }
             if (count > 1)
             {
-                fake = new FakeDevice(2, "Fake clutch device");
+                fake = new FakeDevice(2, "Fake animated clutch device");
                 fake.Capabilities = new Capabilities(0x0002, 0);
                 fake.AnimateBitePoint = true;
                 FakeDevices.Add(fake);
@@ -83,6 +83,12 @@ namespace ESP32SimWheel
                 fake.Capabilities = new Capabilities((1<<4), 0);
                 fake.AnimateBatteryLevel = true;
                 fake.IsLocked = true;
+                FakeDevices.Add(fake);
+            }
+            if (count > 4)
+            {
+                fake = new FakeDevice(5, "Fake static clutch device");
+                fake.Capabilities = new Capabilities(0x0002, 0);
                 FakeDevices.Add(fake);
             }
         }

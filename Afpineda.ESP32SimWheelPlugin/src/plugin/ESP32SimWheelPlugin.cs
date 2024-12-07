@@ -20,8 +20,14 @@ namespace Afpineda.ESP32SimWheelPlugin
     [PluginDescription("Telemetry for an ESP32 open-source sim-wheel / button box")]
     [PluginAuthor("Ángel Fernández Pineda. Madrid. Spain. 2024")]
     [PluginName("ESP32 Sim-wheel")]
-    public class CustomDataPlugin : IPlugin, IDataPlugin, IWPFSettingsV2
+    public class ESP32SimWheelPlugin : IPlugin, IDataPlugin, IWPFSettingsV2
     {
+
+        /// <summary>
+        /// User settings
+        /// </summary>
+        public CustomSettings Settings;
+
         /// <summary>
         /// Instance of the current plugin manager
         /// </summary>
@@ -47,6 +53,27 @@ namespace Afpineda.ESP32SimWheelPlugin
         /// <param name="pluginManager"></param>
         /// <param name="data">Current game data, including current and previous data frame.</param>
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
+        {
+            GameAndCarUpdate(ref data);
+            TelemetryDataUpdate(ref data);
+        }
+
+        private void GameAndCarUpdate(ref GameData data)
+        {
+            if (data.NewData != null)
+            {
+                string currentCar = (data.NewData.CarId ?? "");
+                string currentGame = (data.GameName ?? "");
+                if ((currentCar != _lastCar) || (currentGame != _lastGame))
+                {
+                    _lastCar = currentCar;
+                    _lastGame = currentGame;
+                    _mainControl.Dispatcher.Invoke(() => _mainControl.OnGameCarChange(currentGame, currentCar));
+                }
+            }
+        }
+
+        private void TelemetryDataUpdate(ref GameData data)
         {
             if ((data.GameRunning) && (data.NewData != null))
             {
@@ -80,24 +107,14 @@ namespace Afpineda.ESP32SimWheelPlugin
         }
 
         /// <summary>
-        /// Called at plugin manager stop, close/dispose anything needed here !
-        /// Plugins are rebuilt at game change
-        /// </summary>
-        /// <param name="pluginManager"></param>
-        public void End(PluginManager pluginManager)
-        {
-
-        }
-
-        /// <summary>
         /// Returns the settings control, return null if no settings control is required
         /// </summary>
         /// <param name="pluginManager"></param>
         /// <returns></returns>
         public System.Windows.Controls.Control GetWPFSettingsControl(PluginManager pluginManager)
         {
-            System.Windows.Controls.Control mainControl = new MainControl(this);
-            return mainControl;
+            _mainControl = new MainControl(this);
+            return _mainControl;
         }
 
         /// <summary>
@@ -112,6 +129,23 @@ namespace Afpineda.ESP32SimWheelPlugin
 #endif
             SimHub.Logging.Current.Info("[ESP32 Sim-wheel] Init");
             _refreshDeviceList = true;
+            // Load settings
+            Settings = this.ReadCommonSettings<CustomSettings>(
+                "GeneralSettings",
+                () => new CustomSettings());
+
+        }
+
+
+        /// <summary>
+        /// Called at plugin manager stop, close/dispose anything needed here !
+        /// Plugins are rebuilt at game change
+        /// </summary>
+        /// <param name="pluginManager"></param>
+        public void End(PluginManager pluginManager)
+        {
+            SimHub.Logging.Current.Info("[ESP32 Sim-wheel] End");
+            this.SaveCommonSettings<CustomSettings>("GeneralSettings", Settings);
         }
 
         public void Refresh()
@@ -123,5 +157,8 @@ namespace Afpineda.ESP32SimWheelPlugin
         private bool _refreshDeviceList = true;
 
         private IEnumerable<ESP32SimWheel.IDevice> _devices;
+        private string _lastGame = "";
+        private string _lastCar = "";
+        private MainControl _mainControl = null;
     }
 }

@@ -57,6 +57,8 @@ namespace ESP32SimWheel
                 _bitePoint = (byte)(_bitePoint + 1);
                 if (_bitePoint == 255)
                     _bitePoint = 0;
+                _updated = true;
+
             }
             if (AnimateClutchWorkingMode)
             {
@@ -64,17 +66,19 @@ namespace ESP32SimWheel
                     _clutchWorkingMode = ClutchWorkingModes.Clutch;
                 else
                     _clutchWorkingMode = _clutchWorkingMode + 1;
+                _updated = true;
             }
             if (AnimateBatteryLevel)
             {
-                if (BatteryLevel <= 100)
-                    BatteryLevel++;
+                if (_batteryLevel <= 100)
+                    _batteryLevel++;
                 else
-                    BatteryLevel = 0;
+                    _batteryLevel = 0;
+                _updated = true;
             }
-            return AnimateBitePoint ||
-                   AnimateClutchWorkingMode ||
-                   AnimateBatteryLevel;
+            bool result = _updated;
+            _updated = false;
+            return result;
         }
 
         // --------------------------------------------------------
@@ -102,7 +106,19 @@ namespace ESP32SimWheel
             SimHub.Logging.Current.Info("[FakeDeviceESP32] ForceBatteryCalibration()");
         }
 
-        public byte BatteryLevel { get; set; } = 0;
+        public byte BatteryLevel
+        {
+            get
+            {
+
+                return _batteryLevel;
+            }
+            set
+            {
+                _batteryLevel = value;
+                _updated = true;
+            }
+        }
 
         public bool AnimateBatteryLevel { get; set; } = false;
 
@@ -110,7 +126,15 @@ namespace ESP32SimWheel
         // ISecurityLock implementation
         // --------------------------------------------------------
 
-        public bool IsLocked { get; set; } = false;
+        public bool IsLocked
+        {
+            get { return _isLocked; }
+            set
+            {
+                _updated = true;
+                _isLocked = value;
+            }
+        }
 
         // --------------------------------------------------------
         // ITelemetryData implementation
@@ -142,6 +166,7 @@ namespace ESP32SimWheel
             get { return _clutchWorkingMode; }
             set
             {
+                _updated = true;
                 _clutchWorkingMode = value;
                 SimHub.Logging.Current.InfoFormat(
                     "[FakeDeviceESP32] Clutch working mode = {0}",
@@ -155,6 +180,7 @@ namespace ESP32SimWheel
             {
                 if (_bitePoint < 255)
                 {
+                    _updated = true;
                     _bitePoint = value;
                     SimHub.Logging.Current.InfoFormat(
                         "[FakeDeviceESP32] Bite point = {0}",
@@ -165,6 +191,9 @@ namespace ESP32SimWheel
 
         private ClutchWorkingModes _clutchWorkingMode = ClutchWorkingModes.Clutch;
         private byte _bitePoint = 0;
+        private byte _batteryLevel = 0;
+        private bool _isLocked = false;
+        private bool _updated = true;
 
         // --------------------------------------------------------
         // Private fields
