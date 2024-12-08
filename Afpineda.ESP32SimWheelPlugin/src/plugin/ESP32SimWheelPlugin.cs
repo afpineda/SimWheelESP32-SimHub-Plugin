@@ -22,7 +22,7 @@ namespace Afpineda.ESP32SimWheelPlugin
     [PluginDescription("Telemetry for an ESP32 open-source sim-wheel / button box")]
     [PluginAuthor("Ángel Fernández Pineda. Madrid. Spain. 2024")]
     [PluginName("ESP32 Sim-wheel")]
-    public class ESP32SimWheelPlugin : IPlugin, IDataPlugin, IWPFSettingsV2
+    public class ESP32SimWheelPlugin : IDataPlugin, IWPFSettingsV2
     {
 
         /// <summary>
@@ -62,6 +62,7 @@ namespace Afpineda.ESP32SimWheelPlugin
                     _refreshDeviceList = true;
                 _gamePaused = data.GamePaused;
 
+                MonitorBindingsEnabling();
                 MonitorGameAndCar(ref data);
                 UpdateDeviceListWhenNeeded();
                 SendTelemetryData(ref data);
@@ -123,6 +124,17 @@ namespace Afpineda.ESP32SimWheelPlugin
             }
         }
 
+        private void MonitorBindingsEnabling()
+        {
+            if (_bindingsEnabledEvent)
+            {
+                // The user has enabled bindings
+                SimHub.Logging.Current.Info("[ESP32Simwheel] Bindings enabled");
+                foreach (var device in _devices)
+                    Settings.ApplyTo(device);
+            }
+        }
+
         private void MonitorGameAndCar(ref GameData data)
         {
             if (data.NewData != null)
@@ -146,18 +158,21 @@ namespace Afpineda.ESP32SimWheelPlugin
         private void MonitorDevices()
         {
             if (_deviceMonitorTimer.ElapsedMilliseconds > DEVICE_MONITOR_INTERVAL_MS)
+            {
                 try
                 {
                     foreach (var device in _devices)
                     {
-                        if (device.Refresh())
+                        if (device.Refresh() || _bindingsEnabledEvent)
                             Settings.SaveFrom(device);
                     }
+                    _bindingsEnabledEvent = false;
                 }
                 finally
                 {
                     _deviceMonitorTimer.Restart();
                 }
+            }
         }
 
 
@@ -189,9 +204,9 @@ namespace Afpineda.ESP32SimWheelPlugin
             Settings = this.ReadCommonSettings<CustomSettings>(
                 "GeneralSettings",
                 () => new CustomSettings());
-
+            Settings.OnBindToGameAndCar += OnBindToGameAndCar;
+            _bindingsEnabledEvent = Settings.BindToGameAndCar;
         }
-
 
         /// <summary>
         /// Called at plugin manager stop, close/dispose anything needed here !
@@ -210,11 +225,18 @@ namespace Afpineda.ESP32SimWheelPlugin
             SimHub.Logging.Current.Info("[ESP32 Sim-wheel] Force device list update");
         }
 
+        void OnBindToGameAndCar(bool state)
+        {
+            if (state)
+                _bindingsEnabledEvent = true;
+        }
+
         private bool _refreshDeviceList = true;
 
         private ESP32SimWheel.IDevice[] _devices = new ESP32SimWheel.IDevice[0];
         private MainControl _mainControl = null;
         private bool _gamePaused = false;
+        private bool _bindingsEnabledEvent = false;
         private readonly Stopwatch _deviceMonitorTimer = new Stopwatch();
         private const int DEVICE_MONITOR_INTERVAL_MS = 1000;
     }

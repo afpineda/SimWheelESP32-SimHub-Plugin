@@ -27,7 +27,15 @@ namespace Afpineda.ESP32SimWheelPlugin
 
     public class CustomSettings
     {
-        public bool BindToGameAndCar { get; set; } = false;
+        public bool BindToGameAndCar
+        {
+            get { return _bindToGameAndCar; }
+            set
+            {
+                _bindToGameAndCar = value;
+                OnBindToGameAndCar(value);
+            }
+        }
         public DeviceGameAndCarSettings[] DeviceGameAndCarSettings
         {
             get
@@ -74,6 +82,11 @@ namespace Afpineda.ESP32SimWheelPlugin
                     _lastGame,
                     _lastCar);
             }
+            else
+                SimHub.Logging.Current.InfoFormat("[ESP32Simwheel] [Settings] No settings found for {0}/{1}/{2}",
+                    device.HidInfo.DisplayName,
+                    _lastGame,
+                    _lastCar);
         }
 
         public void SaveFrom(ESP32SimWheel.IDevice device)
@@ -139,9 +152,13 @@ namespace Afpineda.ESP32SimWheelPlugin
             }
         }
 
+        public delegate void BindToGameAndCarNotify(bool state);
+        public event BindToGameAndCarNotify OnBindToGameAndCar;
+
         private readonly List<DeviceGameAndCarSettings> _deviceGameAndCarSettings = new List<DeviceGameAndCarSettings>();
         private string _lastGame = "";
         private string _lastCar = "";
+        private bool _bindToGameAndCar = false;
     } // class CustomSettings
 
 

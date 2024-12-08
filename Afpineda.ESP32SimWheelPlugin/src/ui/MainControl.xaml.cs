@@ -12,7 +12,6 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
-// using System.Windows.Forms;
 using SimHub.Plugins.Styles;
 using ESP32SimWheel;
 
@@ -46,7 +45,7 @@ namespace Afpineda.ESP32SimWheelPlugin
             // Timer to poll selected device
             _updateTimer = new DispatcherTimer();
             _updateTimer.Tick += new EventHandler(OnTimer);
-            _updateTimer.Interval = TimeSpan.FromMilliseconds(250);
+            _updateTimer.Interval = TimeSpan.FromMilliseconds(POLLING_INTERVAL_MS);
             // The timer will be started when this control becomes visible
             IsVisibleChanged += OnVisibilityChange;
         }
@@ -150,7 +149,7 @@ namespace Afpineda.ESP32SimWheelPlugin
         {
             bool visible = (bool)e.NewValue;
             SimHub.Logging.Current.InfoFormat(
-                   "[FakeDeviceESP32] [UI] Visibility = {0}",
+                   "[ESP32 Sim-Wheel] [UI] Visibility = {0}",
                    visible);
             if (visible)
                 _updateTimer.Start();
@@ -382,6 +381,7 @@ namespace Afpineda.ESP32SimWheelPlugin
 
         private readonly List<ESP32SimWheel.IDevice> AvailableDevices = new List<ESP32SimWheel.IDevice>();
         public ESP32SimWheelPlugin Plugin { get; }
+        private const int POLLING_INTERVAL_MS = 250;
 
     } // classMainControl
 } //namespace Afpineda.ESP32SimWheelPlugin
