@@ -77,13 +77,13 @@ namespace Afpineda.ESP32SimWheelPlugin
                     device.AltButtons.AltButtonsWorkingMode = settings.AltButtonsWorkingMode;
                 if (device.DPad != null)
                     device.DPad.DPadWorkingMode = settings.DPadWorkingMode;
-                SimHub.Logging.Current.InfoFormat("[ESP32Simwheel] [Settings] Restored {0}/{1}/{2}",
+                SimHub.Logging.Current.InfoFormat("[ESP32 Sim-wheel][Settings] Restored {0}/{1}/{2}",
                     device.HidInfo.DisplayName,
                     _lastGame,
                     _lastCar);
             }
             else
-                SimHub.Logging.Current.InfoFormat("[ESP32Simwheel] [Settings] No settings found for {0}/{1}/{2}",
+                SimHub.Logging.Current.InfoFormat("[ESP32 Sim-wheel] [Settings] No settings found for {0}/{1}/{2}",
                     device.HidInfo.DisplayName,
                     _lastGame,
                     _lastCar);
@@ -117,7 +117,7 @@ namespace Afpineda.ESP32SimWheelPlugin
             {
                 item.DPadWorkingMode = device.DPad.DPadWorkingMode;
             }
-            SimHub.Logging.Current.InfoFormat("[ESP32Simwheel] [Settings] Saved {0}/{1}/{2}",
+            SimHub.Logging.Current.InfoFormat("[ESP32 Sim-wheel] [Settings] Saved {0}/{1}/{2}",
                 device.HidInfo.DisplayName,
                 _lastGame,
                 _lastCar);
@@ -142,7 +142,7 @@ namespace Afpineda.ESP32SimWheelPlugin
             {
                 if ((item.DeviceID == deviceID) && (item.Game == game) && (item.Car == car))
                 {
-                    SimHub.Logging.Current.InfoFormat("[ESP32Simwheel] [ClutchSettings] Removed {0:X},{1},{2}",
+                    SimHub.Logging.Current.InfoFormat("[ESP32 Sim-wheel] [Settings] Removed {0:X},{1},{2}",
                         deviceID,
                         game,
                         car);

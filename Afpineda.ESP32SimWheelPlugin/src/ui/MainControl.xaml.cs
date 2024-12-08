@@ -162,7 +162,7 @@ namespace Afpineda.ESP32SimWheelPlugin
             if (SelectedDevice != null)
                 try
                 {
-                    SimHub.Logging.Current.InfoFormat("[ESP32Simwheel] [UI] Device selected: {0}", SelectedDevice.HidInfo.DisplayName);
+                    SimHub.Logging.Current.InfoFormat("[ESP32 Sim-wheel] [UI] Device selected: {0}", SelectedDevice.HidInfo.DisplayName);
 
                     // Update static UI elements (not dependant on device state)
                     TabVisible(InfoPage, true);
@@ -195,7 +195,7 @@ namespace Afpineda.ESP32SimWheelPlugin
             else
             {
                 // No device is selected (or no devices are available)
-                SimHub.Logging.Current.Info("[ESP32Simwheel] [UI] No device selected");
+                SimHub.Logging.Current.Info("[ESP32 Sim-wheel] [UI] No device selected");
                 TabVisible(InfoPage, false);
                 TabVisible(ClutchPage, false);
                 TabVisible(AltButtonsPage, false);

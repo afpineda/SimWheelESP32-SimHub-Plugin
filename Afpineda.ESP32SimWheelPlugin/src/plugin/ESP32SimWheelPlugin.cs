@@ -129,7 +129,7 @@ namespace Afpineda.ESP32SimWheelPlugin
             if (_bindingsEnabledEvent)
             {
                 // The user has enabled bindings
-                SimHub.Logging.Current.Info("[ESP32Simwheel] Bindings enabled");
+                SimHub.Logging.Current.Info("[ESP32 Sim-wheel] Bindings enabled");
                 foreach (var device in _devices)
                     Settings.ApplyTo(device);
             }
