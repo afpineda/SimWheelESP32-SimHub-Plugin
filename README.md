@@ -38,7 +38,6 @@ except when asked.
 
 This feature stores the device configuration for each game and car,
 and applies it when the game or car is changed.
-Everything is automatic.
 
 For bindings to work:
 
@@ -50,17 +49,16 @@ The bound settings are limited to clutch paddles (working mode and bite point),
 "ALT buttons" (working mode) and DPAD (working mode).
 Applies to all detected devices.
 
-- **SimHub ➡️ device**. Saved settings (if any) are restored to each device when:
+- **SimHub ➡️ device**.
+  Saved settings (if any) are restored to each device when:
   - A new device is detected.
   - Current game or car is changed.
   - The user checks "Bind to current game and car".
 
-- **Device ➡️ SimHub**. Device settings are saved per game and car when:
-  - Device settings are changed, no matter how
-    (companion app, SimHub plugin or the device itself).
-    Devices are polled once per second, more or less.
-  - New devices are about to be detected (refresh).
-  - The user checks "Bind to current game and car".
+- **Device ➡️ SimHub**.
+  When you press the "Bind current settings to current game/car" button,
+  settings from all devices are bound to the current game and car,
+  then saved.
 
 ### Device settings
 
