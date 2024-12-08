@@ -38,7 +38,6 @@ namespace Afpineda.ESP32SimWheelPlugin
             // Initialization
             this.Plugin = plugin;
             SelectDeviceCombo.ItemsSource = AvailableDevices;
-            BindToGameCarCheckbox.IsChecked = Plugin.Settings.BindToGameAndCar;
             OnGameCarChange("", "");
             RefreshButton_click(this, null);
 
@@ -152,7 +151,10 @@ namespace Afpineda.ESP32SimWheelPlugin
                    "[ESP32 Sim-Wheel] [UI] Visibility = {0}",
                    visible);
             if (visible)
+            {
+                BindToGameCarCheckbox.IsChecked = Plugin.Settings.BindToGameAndCar;
                 _updateTimer.Start();
+            }
             else
                 _updateTimer.Stop();
         }

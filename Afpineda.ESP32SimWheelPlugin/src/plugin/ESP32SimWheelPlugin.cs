@@ -173,18 +173,28 @@ namespace Afpineda.ESP32SimWheelPlugin
 #if DEBUG
             Devices.UseFakeDevices();
 #endif
-            SimHub.Logging.Current.Info("[ESP32 Sim-wheel] Init");
-            _refreshDeviceList = true;
-
             // Load settings
             Settings = this.ReadCommonSettings<CustomSettings>(
                 "GeneralSettings",
                 () => new CustomSettings());
 
+            SimHub.Logging.Current.InfoFormat(
+                "[ESP32 Sim-wheel] Init: {0} device/game/car settings",
+                 Settings.DeviceGameAndCarSettings.Length);
+            foreach (var gameCarSettings in Settings.DeviceGameAndCarSettings)
+                SimHub.Logging.Current.InfoFormat(
+                    "[ESP32 Sim-wheel] Settings loaded for {0}/{1}/{2}",
+                    gameCarSettings.DeviceID,
+                    gameCarSettings.Game,
+                    gameCarSettings.Car);
+
+
             // Configure events
             Settings.OnBindToGameAndCar += OnBindToGameAndCar;
             _bindingsEnabledEvent = Settings.BindToGameAndCar;
 
+            // Refresh device list
+            _refreshDeviceList = true;
         }
 
         /// <summary>

@@ -33,7 +33,7 @@ namespace Afpineda.ESP32SimWheelPlugin
             set
             {
                 _bindToGameAndCar = value;
-                OnBindToGameAndCar(value);
+                OnBindToGameAndCar?.Invoke(value);
             }
         }
         public DeviceGameAndCarSettings[] DeviceGameAndCarSettings
