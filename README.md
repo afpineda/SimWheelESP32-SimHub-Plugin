@@ -65,7 +65,9 @@ Applies to all detected devices.
 ### Device settings
 
 Select a device to configure in the combo box.
-Only configurable options will be shown in the corresponding tab.
+Only basic configurable options will be shown in the corresponding tab.
+For advanced configuration use the
+[companion app](https://github.com/afpineda/SimWheelESP32Config).
 
 ### Troubleshooting
 
