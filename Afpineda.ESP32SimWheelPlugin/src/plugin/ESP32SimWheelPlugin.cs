@@ -14,7 +14,6 @@ using System.Linq;
 using System.Windows.Media;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using ESP32SimWheel;
 
 namespace Afpineda.ESP32SimWheelPlugin
@@ -66,7 +65,7 @@ namespace Afpineda.ESP32SimWheelPlugin
                 MonitorGameAndCar(ref data);
                 UpdateDeviceListWhenNeeded();
                 SendTelemetryData(ref data);
-                MonitorDevices();
+                MonitorSaveRequest();
             }
             catch (Exception ex)
             {
@@ -81,33 +80,25 @@ namespace Afpineda.ESP32SimWheelPlugin
             {
                 SimHub.Logging.Current.Info("[ESP32 Sim-wheel] Refreshing device list");
                 _refreshDeviceList = false;
-                // Save all device settings before refreshing,
-                // since an existing device may not appear in the
-                // new list
-                foreach (var device in _devices)
-                    Settings.SaveFrom(device);
 
                 // Obtain a new list of available devices
-                _devices = ESP32SimWheel.Devices.Enumerate().ToArray();
+                ESP32SimWheel.IDevice[] newDevices =
+                    ESP32SimWheel.Devices.Enumerate().ToArray();
 
                 int count = 0;
-                foreach (var device in _devices)
+                foreach (var device in newDevices)
                 {
                     count++;
-                    // Reload settings since a new
-                    // device may appear
-                    Settings.ApplyTo(device);
-                    // Log
                     SimHub.Logging.Current.InfoFormat(
                             "[ESP32 Sim-wheel] Found: '{0}'",
                             device.HidInfo.DisplayName);
+                    if (IsNewDevice(device.UniqueID))
+                        Settings.ApplyTo(device);
                 }
                 SimHub.Logging.Current.InfoFormat(
                     "[ESP32 Sim-wheel] Refresh: {0} devices found",
                     count);
-
-                // Restart timer
-                _deviceMonitorTimer.Restart();
+                _devices = newDevices;
             }
         }
 
@@ -130,8 +121,8 @@ namespace Afpineda.ESP32SimWheelPlugin
             {
                 // The user has enabled bindings
                 SimHub.Logging.Current.Info("[ESP32 Sim-wheel] Bindings enabled");
-                foreach (var device in _devices)
-                    Settings.ApplyTo(device);
+                ApplySettingsToAllDevices();
+                _bindingsEnabledEvent = false;
             }
         }
 
@@ -142,39 +133,24 @@ namespace Afpineda.ESP32SimWheelPlugin
                 string currentCar = (data.NewData.CarId ?? "");
                 string currentGame = (data.GameName ?? "");
 
-                if (Settings.UpdateGameAndCar(currentCar, currentGame))
+                if (Settings.UpdateGameAndCar(currentGame, currentCar))
                 {
                     // Game or car has changed
-                    // Apply stored settings to each device
-                    foreach (var device in _devices)
-                        Settings.ApplyTo(device);
-
+                    ApplySettingsToAllDevices();
                     // Notify UI
                     _mainControl.Dispatcher.Invoke(() => _mainControl.OnGameCarChange(currentGame, currentCar));
                 }
             }
         }
 
-        private void MonitorDevices()
+        private void MonitorSaveRequest()
         {
-            if (_deviceMonitorTimer.ElapsedMilliseconds > DEVICE_MONITOR_INTERVAL_MS)
+            if (_saveRequest)
             {
-                try
-                {
-                    foreach (var device in _devices)
-                    {
-                        if (device.Refresh() || _bindingsEnabledEvent)
-                            Settings.SaveFrom(device);
-                    }
-                    _bindingsEnabledEvent = false;
-                }
-                finally
-                {
-                    _deviceMonitorTimer.Restart();
-                }
+                SaveSettingsFromAllDevices();
+                _saveRequest = false;
             }
         }
-
 
         /// <summary>
         /// Returns the settings control, return null if no settings control is required
@@ -199,13 +175,16 @@ namespace Afpineda.ESP32SimWheelPlugin
 #endif
             SimHub.Logging.Current.Info("[ESP32 Sim-wheel] Init");
             _refreshDeviceList = true;
-            _deviceMonitorTimer.Restart();
+
             // Load settings
             Settings = this.ReadCommonSettings<CustomSettings>(
                 "GeneralSettings",
                 () => new CustomSettings());
+
+            // Configure events
             Settings.OnBindToGameAndCar += OnBindToGameAndCar;
             _bindingsEnabledEvent = Settings.BindToGameAndCar;
+
         }
 
         /// <summary>
@@ -225,10 +204,51 @@ namespace Afpineda.ESP32SimWheelPlugin
             SimHub.Logging.Current.Info("[ESP32 Sim-wheel] Force device list update");
         }
 
-        void OnBindToGameAndCar(bool state)
+        public void Save()
+        {
+            _saveRequest = true;
+            SimHub.Logging.Current.Info("[ESP32 Sim-wheel] Save requested");
+        }
+
+        private void OnBindToGameAndCar(bool state)
         {
             if (state)
                 _bindingsEnabledEvent = true;
+        }
+
+        private bool IsNewDevice(ulong deviceID)
+        {
+            foreach (var device in _devices)
+                if (device.UniqueID == deviceID)
+                    return false;
+            return true;
+        }
+
+        private void ApplySettingsToAllDevices()
+        {
+            foreach (var device in _devices)
+                try
+                {
+                    Settings.ApplyTo(device);
+                }
+                catch
+                {
+                    _refreshDeviceList = true;
+                }
+        }
+
+        private void SaveSettingsFromAllDevices()
+        {
+            foreach (var device in _devices)
+                try
+                {
+                    Settings.SaveFrom(device);
+                }
+                catch
+                {
+                    _refreshDeviceList = true;
+                }
+            this.SaveCommonSettings<CustomSettings>("GeneralSettings", Settings);
         }
 
         private bool _refreshDeviceList = true;
@@ -237,7 +257,7 @@ namespace Afpineda.ESP32SimWheelPlugin
         private MainControl _mainControl = null;
         private bool _gamePaused = false;
         private bool _bindingsEnabledEvent = false;
-        private readonly Stopwatch _deviceMonitorTimer = new Stopwatch();
+        private bool _saveRequest = false;
         private const int DEVICE_MONITOR_INTERVAL_MS = 1000;
     }
 }

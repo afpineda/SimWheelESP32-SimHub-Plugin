@@ -253,6 +253,11 @@ namespace Afpineda.ESP32SimWheelPlugin
             SelectDeviceCombo.IsEnabled = (SelectDeviceCombo.Items.Count > 0);
         }
 
+        private void SaveButton_click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            Plugin.Save();
+        }
+
         private void OnClutchWorkingModeChanged(object sender, SelectionChangedEventArgs e)
         {
             if ((SelectedDevice != null) && (SelectedDevice.Clutch != null) && !_updating)
@@ -280,6 +285,9 @@ namespace Afpineda.ESP32SimWheelPlugin
         private void OnBindToGameCarChanged(object sender, RoutedEventArgs e)
         {
             Plugin.Settings.BindToGameAndCar = BindToGameCarCheckbox.IsChecked ?? false;
+            SaveButton.IsEnabled =
+                Plugin.Settings.BindToGameAndCar &&
+                Plugin.Settings.GameAndCarAvailable;
         }
 
         private void OnAltButtonsWorkingModeChanged(object sender, SelectionChangedEventArgs e)
@@ -335,6 +343,9 @@ namespace Afpineda.ESP32SimWheelPlugin
                     "{0} / {1}",
                     game,
                     car);
+            SaveButton.IsEnabled =
+                Plugin.Settings.BindToGameAndCar &&
+                Plugin.Settings.GameAndCarAvailable;
         }
 
         // --------------------------------------------------------

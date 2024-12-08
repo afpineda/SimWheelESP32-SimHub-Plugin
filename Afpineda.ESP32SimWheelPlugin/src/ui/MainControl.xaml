@@ -11,51 +11,52 @@
              xmlns:iconpacks="clr-namespace:MahApps.Metro.IconPacks;assembly=MahApps.Metro.IconPacks.Material">
     <ScrollViewer x:Name="Root">
         <StackPanel>
-            <DockPanel Margin="10,10,10,10">
-                <styles:SHToggleCheckbox Margin="1,0,40,0"
-                                         x:Name="BindToGameCarCheckbox"
-                                         Checked="OnBindToGameCarChanged"
-                                         Unchecked="OnBindToGameCarChanged">
-                    Bind to current game and car
-                </styles:SHToggleCheckbox>
-                <StackPanel Orientation="Horizontal"
-                            DockPanel.Dock="Right">
-                    <TextBlock VerticalAlignment="Center"
-                               Margin="0,0,20,0">
-                        <Bold>Game / Car:</Bold>
-                    </TextBlock>
-                    <TextBlock VerticalAlignment="Center"
-                               x:Name="GameAndCarText">
-                        ??? / ???
-                    </TextBlock>
-                </StackPanel>
-                <TextBlock />
-            </DockPanel>
-            <styles:SHSectionSeparator />
-            <Grid Margin="0,0,0,20"
-                  x:Name="SelectDeviceGroup">
+            <Grid Margin="0,0,0,10">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="3*" />
                     <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="2*" />
                 </Grid.ColumnDefinitions>
-                <ComboBox Grid.Column="0"
-                          x:Name="SelectDeviceCombo"
-                          SelectionChanged="OnSelectDevice">
-                    <!-- <ComboBoxItem>ComboBox Item #1</ComboBoxItem>
-                    <ComboBoxItem IsSelected="True">ComboBox Item #2</ComboBoxItem>
-                    <ComboBoxItem>ComboBox Item #3</ComboBoxItem> -->
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding HidInfo.DisplayName}" />
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
-                <styles:SHButtonPrimary HorizontalAlignment="Left"
-                                        Grid.Column="1"
-                                        Click="RefreshButton_click">
-                    Refresh
-                </styles:SHButtonPrimary>
+                <StackPanel Grid.Column="0">
+                    <styles:SHToggleCheckbox Margin="1,20,20,1"
+                                             x:Name="BindToGameCarCheckbox"
+                                             Checked="OnBindToGameCarChanged"
+                                             Unchecked="OnBindToGameCarChanged">
+                        Bind to current game and car
+                    </styles:SHToggleCheckbox>
+                    <StackPanel Orientation="Horizontal"
+                                Margin="45,5,5,0">
+                        <TextBlock VerticalAlignment="Center"
+                                   Margin="0,0,20,0">
+                            <Bold>Game / Car:</Bold>
+                        </TextBlock>
+                        <TextBlock VerticalAlignment="Center"
+                                   x:Name="GameAndCarText">
+                            ??? / ???
+                        </TextBlock>
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <styles:SHButtonPrimary x:Name="SaveButton"
+                                            Click="SaveButton_click"
+                                            IsEnabled="{Binding SaveEnabled}">
+                        Bind current settings of all devices to current game/car
+                    </styles:SHButtonPrimary>
+                    <styles:SHButtonPrimary Click="RefreshButton_click">
+                        Refresh
+                    </styles:SHButtonPrimary>
+                </StackPanel>
             </Grid>
+            <styles:SHSectionSeparator />
+            <ComboBox Grid.Column="0"
+                      Margin="20,20,20,20"
+                      x:Name="SelectDeviceCombo"
+                      SelectionChanged="OnSelectDevice">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding HidInfo.DisplayName}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
             <styles:SHTabControl x:Name="MainPages">
                 <styles:SHTabItem Header="Info"
                                   Background="red"

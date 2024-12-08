@@ -50,6 +50,14 @@ namespace Afpineda.ESP32SimWheelPlugin
             }
         }
 
+        public bool GameAndCarAvailable
+        {
+            get
+            {
+                return ((_lastGame.Length > 0) && (_lastCar.Length > 0));
+            }
+        }
+
         public bool UpdateGameAndCar(string game, string car)
         {
             if ((game != _lastGame) || (car != _lastCar))
@@ -77,6 +85,7 @@ namespace Afpineda.ESP32SimWheelPlugin
                     device.AltButtons.AltButtonsWorkingMode = settings.AltButtonsWorkingMode;
                 if (device.DPad != null)
                     device.DPad.DPadWorkingMode = settings.DPadWorkingMode;
+                device.Refresh();
                 SimHub.Logging.Current.InfoFormat("[ESP32 Sim-wheel][Settings] Restored {0}/{1}/{2}",
                     device.HidInfo.DisplayName,
                     _lastGame,
@@ -95,6 +104,7 @@ namespace Afpineda.ESP32SimWheelPlugin
                 return;
             if ((device.Clutch == null) && (device.AltButtons == null) && (device.DPad == null))
                 return;
+            device.Refresh();
             DeviceGameAndCarSettings item = Find(device.UniqueID);
             if (item == null)
             {
@@ -131,25 +141,6 @@ namespace Afpineda.ESP32SimWheelPlugin
                     return item;
             }
             return null;
-        }
-
-        public void RemoveClutchSettings(ulong deviceID, string game, string car)
-        {
-            if ((game.Length == 0) || (car.Length == 0))
-                return;
-
-            foreach (DeviceGameAndCarSettings item in _deviceGameAndCarSettings)
-            {
-                if ((item.DeviceID == deviceID) && (item.Game == game) && (item.Car == car))
-                {
-                    SimHub.Logging.Current.InfoFormat("[ESP32 Sim-wheel] [Settings] Removed {0:X},{1},{2}",
-                        deviceID,
-                        game,
-                        car);
-                    _deviceGameAndCarSettings.Remove(item);
-                    return;
-                }
-            }
         }
 
         public delegate void BindToGameAndCarNotify(bool state);
