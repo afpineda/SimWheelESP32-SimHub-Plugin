@@ -21,17 +21,51 @@ sim-wheels and button boxes.
 ### Upgrading to a newer version
 
 Just repeat the unzip procedure.
-There is no need to re-activate this plugin again.
+There is no need to re-activate this plugin again
+except when asked.
 
 ## Running
 
-- The plugin will automatically detect all connected devices in most cases.
-  However, it will ignore devices that do not have telemetry display capabilities.
-- If your device is not detected, you can force a refresh in two ways:
-  - Pause your game, then resume.
-  - Click on "ESP32 Sim-wheel" (left main menu),
-    then click on "Find connected devices".
+- To interact with this plugin, click on "ESP32 Sim-wheel" option
+  in the left menu panel.
+- The plugin does **not** detect new devices at connection.
+  If your device is not detected, you can force a **refresh** in two ways:
+  - Pause your game.
+  - Click on the "Refresh" button.
 - Telemetry data will be sent to all connected and suitable devices.
+
+### Bind settings to game and car (how it works)
+
+This feature stores the device configuration for each game and car,
+and applies it when the game or car is changed.
+Everything is automatic.
+
+For bindings to work:
+
+- The "Bind to current game and car" option must be checked.
+- A game must be selected in SimHub.
+- A car must be selected in-game.
+
+The bound settings are limited to clutch paddles (working mode and bite point),
+"ALT buttons" (working mode) and DPAD (working mode).
+Applies to all detected devices.
+
+- **SimHub ➡️ device**. Saved settings (if any) are restored to each device when:
+  - A new device is detected.
+  - Current game or car is changed.
+  - The user checks "Bind to current game and car".
+
+- **Device ➡️ SimHub**. Device settings are saved per game and car when:
+  - Device settings are changed, no matter how
+    (companion app, SimHub plugin or the device itself).
+    Devices are polled once per second, more or less.
+  - New devices are about to be detected (refresh).
+  - The user checks "Bind to current game and car".
+
+### Device settings
+
+Select a device to configure in the combo box.
+Only configurable options will be shown in the corresponding tab.
 
 ### Troubleshooting
 
@@ -40,3 +74,10 @@ your installation folder. Typically:
 `C:\Program Files (x86)\SimHub\logs\simhub.txt`.
 
 Open that file and look for the string `[ESP32 Sim-wheel]`.
+
+### How to reset plugin settings
+
+Settings are stored in the
+`PluginsData\Common\ESP32SimWheelPlugin.GeneralSettings.json`
+file relative to your installation folder.
+You may delete that file to forget all device/game/car bindings.
