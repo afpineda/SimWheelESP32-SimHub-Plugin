@@ -22,7 +22,9 @@ namespace ESP32SimWheel
             ESP32SimWheel.IDevice,
             ESP32SimWheel.IClutch,
             ESP32SimWheel.ISecurityLock,
-            ESP32SimWheel.IBattery
+            ESP32SimWheel.IBattery,
+            ESP32SimWheel.IDpad,
+            ESP32SimWheel.IAltButtons
         {
             // --------------------------------------------------------
             // String representation
@@ -64,7 +66,26 @@ namespace ESP32SimWheel
                 }
             }
 
-            public IDpad DPad { get { return null; } }
+            public IDpad DPad
+            {
+                get
+                {
+                    if (_capabilities.HasDPad)
+                        return this;
+                    else return null;
+                }
+            }
+
+            public IAltButtons AltButtons
+            {
+                get
+                {
+                    if (_capabilities.HasAltButtons)
+                        return this;
+                    else return null;
+                }
+            }
+
             public ulong UniqueID { get; private set; }
 
             public bool Refresh()
@@ -81,6 +102,51 @@ namespace ESP32SimWheel
                 }
                 ThrowIOException();
                 return false;
+            }
+            // --------------------------------------------------------
+            // IDPAD implementation
+            // --------------------------------------------------------
+
+            public DPadWorkingModes DPadWorkingMode
+            {
+                get
+                {
+                    if ((_report3.Length < 6) || (_report3[5] != 0))
+                        return DPadWorkingModes.Navigation;
+                    return DPadWorkingModes.Button;
+                }
+                set
+                {
+                    if (_report3.Length > 5)
+                    {
+                        byte[] newReport3 = NewReport3();
+                        newReport3[5] = (byte)value;
+                        if (!hidDevice.WriteFeatureData(newReport3))
+                            ThrowIOException();
+                    }
+                }
+            }
+
+            // --------------------------------------------------------
+            // IAltButtons implementation
+            // --------------------------------------------------------
+
+            public AltButtonWorkingModes AltButtonsWorkingMode
+            {
+                get
+                {
+                    if (_report3[2] == 0)
+                        return AltButtonWorkingModes.Button;
+                    else
+                        return AltButtonWorkingModes.ALT;
+                }
+                set
+                {
+                    byte[] newReport3 = NewReport3();
+                    newReport3[2] = (byte)value;
+                    if (!hidDevice.WriteFeatureData(newReport3))
+                        ThrowIOException();
+                }
             }
 
             // --------------------------------------------------------

@@ -141,6 +141,8 @@ namespace Afpineda.ESP32SimWheelPlugin
                     else
                         TelemetryDataText.Text = "No";
                     TabVisible(ClutchPage, SelectedDevice.Capabilities.HasClutch);
+                    TabVisible(AltButtonsPage, SelectedDevice.Capabilities.HasAltButtons);
+                    TabVisible(DPadPage, SelectedDevice.Capabilities.HasDPad);
                     MainPages.SelectedIndex = 0;
 
                     // Read device state and update dynamic UI elements
@@ -158,6 +160,8 @@ namespace Afpineda.ESP32SimWheelPlugin
                 SimHub.Logging.Current.Info("[ESP32Simwheel] [UI] No device selected");
                 TabVisible(InfoPage, false);
                 TabVisible(ClutchPage, false);
+                TabVisible(AltButtonsPage, false);
+                TabVisible(DPadPage, false);
             }
         }
 
@@ -240,6 +244,46 @@ namespace Afpineda.ESP32SimWheelPlugin
             Plugin.Settings.BindToGameAndCar = BindToGameCarCheckbox.IsChecked ?? false;
         }
 
+        private void OnAltButtonsWorkingModeChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if ((SelectedDevice != null) &&
+                (SelectedDevice.AltButtons != null) &&
+                !_updating)
+                try
+                {
+                    if (AltButtonsButtonMode.IsSelected)
+                        SelectedDevice.AltButtons.AltButtonsWorkingMode =
+                            AltButtonWorkingModes.Button;
+                    else
+                        SelectedDevice.AltButtons.AltButtonsWorkingMode =
+                            AltButtonWorkingModes.ALT;
+                }
+                catch
+                {
+                    RefreshButton_click(null, null);
+                }
+        }
+
+        private void OnDPadWorkingModeChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if ((SelectedDevice != null) &&
+                (SelectedDevice.DPad != null) &&
+                !_updating)
+                try
+                {
+                    if (DPadButtonMode.IsSelected)
+                        SelectedDevice.DPad.DPadWorkingMode =
+                            DPadWorkingModes.Button;
+                    else
+                        SelectedDevice.DPad.DPadWorkingMode =
+                            DPadWorkingModes.Navigation;
+                }
+                catch
+                {
+                    RefreshButton_click(null, null);
+                }
+        }
+
         // --------------------------------------------------------
         // Plugin callbacks (called from CustomDataPlugin)
         // --------------------------------------------------------
@@ -269,8 +313,12 @@ namespace Afpineda.ESP32SimWheelPlugin
                     int idx = 0; // tabPage == InfoPage
                     if (tabPage == ClutchPage)
                         idx = 1;
+                    else if (tabPage == AltButtonsPage)
+                        idx = 2;
+                    else if (tabPage == DPadPage)
+                        idx = 3;
                     // else if (tabPage == LedsPage)
-                    //     idx = 2;
+                    //     idx = 4;
                     MainPages.Items.Insert(idx, tabPage);
                 }
             }

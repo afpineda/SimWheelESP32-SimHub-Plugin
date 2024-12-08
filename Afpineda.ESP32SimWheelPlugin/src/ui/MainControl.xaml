@@ -141,6 +141,40 @@
                         </StackPanel>
                     </StackPanel>
                 </styles:SHTabItem>
+                <styles:SHTabItem Header="ALT buttons"
+                                  x:Name="AltButtonsPage">
+                    <StackPanel>
+                        <TextBlock />
+                        <styles:SHExpander IsExpanded="True">
+                            <styles:SHExpander.Header>
+                                Working mode
+                            </styles:SHExpander.Header>
+                            <styles:SHListBox x:Name="AltButtonsWorkingModeListBox"
+                                              SelectionChanged="OnAltButtonsWorkingModeChanged"
+                                              Padding="10,10,10,10">
+                                <ListBoxItem IsSelected="true">Alternate mode</ListBoxItem>
+                                <ListBoxItem x:Name="AltButtonsButtonMode">Regular button</ListBoxItem>
+                            </styles:SHListBox>
+                        </styles:SHExpander>
+                    </StackPanel>
+                </styles:SHTabItem>
+                <styles:SHTabItem Header="DPAD"
+                                  x:Name="DPadPage">
+                    <StackPanel>
+                        <TextBlock />
+                        <styles:SHExpander IsExpanded="True">
+                            <styles:SHExpander.Header>
+                                Working mode
+                            </styles:SHExpander.Header>
+                            <styles:SHListBox x:Name="DPadWorkingModeListBox"
+                                              SelectionChanged="OnDPadWorkingModeChanged"
+                                              Padding="10,10,10,10">
+                                <ListBoxItem IsSelected="true">Navigation</ListBoxItem>
+                                <ListBoxItem x:Name="DPadButtonMode">Regular button</ListBoxItem>
+                            </styles:SHListBox>
+                        </styles:SHExpander>
+                    </StackPanel>
+                </styles:SHTabItem>
                 <!-- <styles:SHTabItem Header="LEDs"
                                   x:Name="LedsPage">
                     <StackPanel />

@@ -87,8 +87,8 @@ namespace ESP32SimWheel
             }
             if (count > 4)
             {
-                fake = new FakeDevice(5, "Fake static clutch device");
-                fake.Capabilities = new Capabilities(0x0002, 0);
+                fake = new FakeDevice(5, "Fake static clutch device + DPad + alt");
+                fake.Capabilities = new Capabilities(0x0002 | (1<<2) | (1<<3), 0);
                 FakeDevices.Add(fake);
             }
         }

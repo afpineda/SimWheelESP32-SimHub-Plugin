@@ -17,7 +17,9 @@ namespace ESP32SimWheel
         ESP32SimWheel.ITelemetryData,
         ESP32SimWheel.IClutch,
         ESP32SimWheel.ISecurityLock,
-        ESP32SimWheel.IBattery
+        ESP32SimWheel.IBattery,
+        ESP32SimWheel.IDpad,
+        ESP32SimWheel.IAltButtons
     {
         // --------------------------------------------------------
         // Device simulation
@@ -47,7 +49,9 @@ namespace ESP32SimWheel
                     return null;
             }
         }
-        public IDpad DPad { get { return null; } }
+        public IDpad DPad { get { if (_capabilities.HasDPad) return this; else return null; } }
+        public IAltButtons AltButtons { get { if (_capabilities.HasAltButtons) return this; else return null; } }
+
         public ulong UniqueID { get; set; }
 
         public bool Refresh()
@@ -98,6 +102,42 @@ namespace ESP32SimWheel
         }
 
         // --------------------------------------------------------
+        // IDPAD implementation
+        // --------------------------------------------------------
+
+        public DPadWorkingModes DPadWorkingMode
+        {
+            get { return _dPadWorkingMode; }
+            set
+            {
+                _updated = (_dPadWorkingMode != value);
+                _dPadWorkingMode = value;
+                SimHub.Logging.Current.InfoFormat(
+                    "[FakeDeviceESP32] DPAD working mode = {0}",
+                    _dPadWorkingMode);
+            }
+        }
+        private DPadWorkingModes _dPadWorkingMode = DPadWorkingModes.Navigation;
+
+        // --------------------------------------------------------
+        // IAltButtons implementation
+        // --------------------------------------------------------
+
+        public AltButtonWorkingModes AltButtonsWorkingMode
+        {
+            get { return _altButtonsWorkingMode; }
+            set
+            {
+                _updated = (_altButtonsWorkingMode != value);
+                _altButtonsWorkingMode = value;
+                SimHub.Logging.Current.InfoFormat(
+                    "[FakeDeviceESP32] ALT buttons working mode = {0}",
+                    _altButtonsWorkingMode);
+            }
+        }
+        private AltButtonWorkingModes _altButtonsWorkingMode = AltButtonWorkingModes.ALT;
+
+        // --------------------------------------------------------
         // IBattery implementation
         // --------------------------------------------------------
 
@@ -120,6 +160,7 @@ namespace ESP32SimWheel
         }
 
         public bool AnimateBatteryLevel { get; set; } = false;
+        private byte _batteryLevel = 0;
 
         // --------------------------------------------------------
         // ISecurityLock implementation
@@ -134,6 +175,8 @@ namespace ESP32SimWheel
                 _isLocked = value;
             }
         }
+
+        private bool _isLocked = false;
 
         // --------------------------------------------------------
         // ITelemetryData implementation
@@ -190,9 +233,6 @@ namespace ESP32SimWheel
 
         private ClutchWorkingModes _clutchWorkingMode = ClutchWorkingModes.Clutch;
         private byte _bitePoint = 0;
-        private byte _batteryLevel = 0;
-        private bool _isLocked = false;
-        private bool _updated = true;
 
         // --------------------------------------------------------
         // Private fields
@@ -201,5 +241,6 @@ namespace ESP32SimWheel
         private HidInfo _hidInfo = new HidInfo();
         private DataVersion _dataVersion = new DataVersion();
         private Capabilities _capabilities = new Capabilities(0, 0);
+        private bool _updated = true;
     }
 } // namespace ESP32SimWheel

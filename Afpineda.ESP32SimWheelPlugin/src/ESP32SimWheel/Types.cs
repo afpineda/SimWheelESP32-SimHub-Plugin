@@ -139,6 +139,7 @@ namespace ESP32SimWheel
         IBattery Battery { get; }
         ITelemetryData TelemetryData { get; }
         IDpad DPad { get; }
+        IAltButtons AltButtons { get; }
         ulong UniqueID { get; }
         bool Refresh();
     }

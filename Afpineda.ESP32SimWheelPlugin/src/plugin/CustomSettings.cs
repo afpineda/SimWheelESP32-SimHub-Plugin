@@ -16,11 +16,13 @@ namespace Afpineda.ESP32SimWheelPlugin
 {
     public class DeviceGameAndCarSettings
     {
-        public ulong DeviceID = 0;
+        public ulong DeviceID { get; set; } = 0;
         public string Game { get; set; } = "";
         public string Car { get; set; } = "";
         public byte BitePoint { get; set; } = 0;
-        public ClutchWorkingModes WorkingMode { get; set; } = ClutchWorkingModes.Clutch;
+        public ClutchWorkingModes ClutchWorkingMode { get; set; } = ClutchWorkingModes.Clutch;
+        public DPadWorkingModes DPadWorkingMode { get; set; } = DPadWorkingModes.Navigation;
+        public AltButtonWorkingModes AltButtonsWorkingMode { get; set; } = AltButtonWorkingModes.ALT;
     }
 
     public class CustomSettings
@@ -60,9 +62,13 @@ namespace Afpineda.ESP32SimWheelPlugin
             {
                 if (device.Clutch != null)
                 {
-                    device.Clutch.ClutchWorkingMode = settings.WorkingMode;
+                    device.Clutch.ClutchWorkingMode = settings.ClutchWorkingMode;
                     device.Clutch.BitePoint = settings.BitePoint;
                 }
+                if (device.AltButtons != null)
+                    device.AltButtons.AltButtonsWorkingMode = settings.AltButtonsWorkingMode;
+                if (device.DPad != null)
+                    device.DPad.DPadWorkingMode = settings.DPadWorkingMode;
                 SimHub.Logging.Current.InfoFormat("[ESP32Simwheel] [Settings] Restored {0}/{1}/{2}",
                     device.HidInfo.DisplayName,
                     _lastGame,
@@ -74,7 +80,7 @@ namespace Afpineda.ESP32SimWheelPlugin
         {
             if ((_lastGame.Length == 0) || (_lastCar.Length == 0) || !BindToGameAndCar)
                 return;
-            if (device.Clutch == null)
+            if ((device.Clutch == null) && (device.AltButtons == null) && (device.DPad == null))
                 return;
             DeviceGameAndCarSettings item = Find(device.UniqueID);
             if (item == null)
@@ -87,8 +93,16 @@ namespace Afpineda.ESP32SimWheelPlugin
             }
             if (device.Clutch != null)
             {
-                item.WorkingMode = device.Clutch.ClutchWorkingMode;
+                item.ClutchWorkingMode = device.Clutch.ClutchWorkingMode;
                 item.BitePoint = device.Clutch.BitePoint;
+            }
+            if (device.AltButtons != null)
+            {
+                item.AltButtonsWorkingMode = device.AltButtons.AltButtonsWorkingMode;
+            }
+            if (device.DPad != null)
+            {
+                item.DPadWorkingMode = device.DPad.DPadWorkingMode;
             }
             SimHub.Logging.Current.InfoFormat("[ESP32Simwheel] [Settings] Saved {0}/{1}/{2}",
                 device.HidInfo.DisplayName,
