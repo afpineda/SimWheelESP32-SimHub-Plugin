@@ -36,15 +36,19 @@ namespace Afpineda.ESP32SimWheelPlugin
 
         public MainControl(ESP32SimWheelPlugin plugin) : this()
         {
+            // Initialization
             this.Plugin = plugin;
             SelectDeviceCombo.ItemsSource = AvailableDevices;
             BindToGameCarCheckbox.IsChecked = Plugin.Settings.BindToGameAndCar;
             OnGameCarChange("", "");
             RefreshButton_click(this, null);
+
+            // Timer to poll selected device
             _updateTimer = new DispatcherTimer();
             _updateTimer.Tick += new EventHandler(OnTimer);
             _updateTimer.Interval = TimeSpan.FromMilliseconds(250);
-            _updateTimer.Start();
+            // The timer will be started when this control becomes visible
+            IsVisibleChanged += OnVisibilityChange;
         }
 
         // --------------------------------------------------------
@@ -71,6 +75,8 @@ namespace Afpineda.ESP32SimWheelPlugin
                     UpdateUIFromBatteryState(SelectedDevice.Battery);
                     UpdateUIFromClutchState(SelectedDevice.Clutch);
                     UpdateUIFromSecurityLockState(SelectedDevice.SecurityLock);
+                    UpdateUIFromDPad(SelectedDevice.DPad);
+                    UpdateUIFromAltButtons(SelectedDevice.AltButtons);
                     _updating = false;
                 }
                 catch (Exception)
@@ -103,14 +109,33 @@ namespace Afpineda.ESP32SimWheelPlugin
             {
                 BitePointSlider.Value = clutch.BitePoint;
                 ClutchWorkingModeListBox.UnselectAll();
-                ListBoxItem item = (ListBoxItem)
-                    ClutchWorkingModeListBox.
-                        ItemContainerGenerator.
-                            ContainerFromIndex((int)clutch.ClutchWorkingMode);
-                if (item != null)
-                    item.IsSelected = true;
+                ClutchWorkingModeListBox.SelectedIndex =
+                    (int)clutch.ClutchWorkingMode;
                 BitePointSlider.IsEnabled =
                     (clutch.ClutchWorkingMode == ClutchWorkingModes.Clutch);
+            }
+        }
+
+        private void UpdateUIFromDPad(ESP32SimWheel.IDpad dPad)
+        {
+            if (dPad != null)
+            {
+                DPadWorkingModeListBox.UnselectAll();
+                if (dPad.DPadWorkingMode == DPadWorkingModes.Button)
+                    DPadWorkingModeListBox.SelectedIndex = 1;
+                else
+                    DPadWorkingModeListBox.SelectedIndex = 0;
+            }
+        }
+        private void UpdateUIFromAltButtons(ESP32SimWheel.IAltButtons altButtons)
+        {
+            if (altButtons != null)
+            {
+                AltButtonsWorkingModeListBox.UnselectAll();
+                if (altButtons.AltButtonsWorkingMode == AltButtonWorkingModes.Button)
+                    AltButtonsWorkingModeListBox.SelectedIndex = 1;
+                else
+                    AltButtonsWorkingModeListBox.SelectedIndex = 0;
             }
         }
 
@@ -118,6 +143,20 @@ namespace Afpineda.ESP32SimWheelPlugin
         // UI Event callbacks
         // (triggered by user interaction)
         // --------------------------------------------------------
+
+        // UI updates are disabled when this control is not visible
+        // (should avoid unneeded CPU usage)
+        void OnVisibilityChange(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            bool visible = (bool)e.NewValue;
+            SimHub.Logging.Current.InfoFormat(
+                   "[FakeDeviceESP32] [UI] Visibility = {0}",
+                   visible);
+            if (visible)
+                _updateTimer.Start();
+            else
+                _updateTimer.Stop();
+        }
 
         private void OnSelectDevice(object sender, SelectionChangedEventArgs args)
         {
