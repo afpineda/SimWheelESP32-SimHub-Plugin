@@ -9,13 +9,12 @@
 
 using System;
 using System.Collections.Generic;
-// using System.Linq;
 using SimHub.Plugins;
 using ESP32SimWheel;
 
 namespace Afpineda.ESP32SimWheelPlugin
 {
-    public class ClutchSettings
+    public class DeviceGameAndCarSettings
     {
         public ulong DeviceID = 0;
         public string Game { get; set; } = "";
@@ -27,54 +26,84 @@ namespace Afpineda.ESP32SimWheelPlugin
     public class CustomSettings
     {
         public bool BindToGameAndCar { get; set; } = false;
-        public ClutchSettings[] ClutchSettings
+        public DeviceGameAndCarSettings[] DeviceGameAndCarSettings
         {
             get
             {
-                return _clutchSettings.ToArray();
+                return _deviceGameAndCarSettings.ToArray();
             }
             set
             {
-                _clutchSettings.Clear();
+                _deviceGameAndCarSettings.Clear();
                 foreach (var setting in value)
-                    _clutchSettings.Add(setting);
+                    _deviceGameAndCarSettings.Add(setting);
             }
         }
 
-        public void SaveClutchSettingsWhenNeeded(
-            ulong deviceID,
-            string game,
-            string car,
-            byte bitePoint,
-            ClutchWorkingModes workingMode)
+        public bool UpdateGameAndCar(string game, string car)
         {
-            if ((game.Length == 0) || (car.Length == 0) || !BindToGameAndCar)
-                return;
-
-            foreach (ClutchSettings item in _clutchSettings)
+            if ((game != _lastGame) || (car != _lastCar))
             {
-                if ((item.DeviceID == deviceID) && (item.Game == game) && (item.Car == car))
-                {
-                    SimHub.Logging.Current.InfoFormat("[ESP32Simwheel] [ClutchSettings] Updated {0:X},{1},{2}",
-                        deviceID,
-                        game,
-                        car);
-                    item.BitePoint = bitePoint;
-                    item.WorkingMode = workingMode;
-                    return;
-                }
+                _lastGame = game;
+                _lastCar = car;
+                return true;
             }
-            ClutchSettings newItem = new ClutchSettings();
-            newItem.DeviceID = deviceID;
-            newItem.Game = game;
-            newItem.Car = car;
-            newItem.BitePoint = bitePoint;
-            newItem.WorkingMode = workingMode;
-            _clutchSettings.Add(newItem);
-            SimHub.Logging.Current.InfoFormat("[ESP32Simwheel] [ClutchSettings] Added {0:X},{1},{2}",
-                deviceID,
-                game,
-                car);
+            return false;
+        }
+
+        public void ApplyTo(ESP32SimWheel.IDevice device)
+        {
+            if ((_lastGame.Length == 0) || (_lastCar.Length == 0) || !BindToGameAndCar)
+                return;
+            DeviceGameAndCarSettings settings = Find(device.UniqueID);
+            if (settings != null)
+            {
+                if (device.Clutch != null)
+                {
+                    device.Clutch.ClutchWorkingMode = settings.WorkingMode;
+                    device.Clutch.BitePoint = settings.BitePoint;
+                }
+                SimHub.Logging.Current.InfoFormat("[ESP32Simwheel] [Settings] Restored {0}/{1}/{2}",
+                    device.HidInfo.DisplayName,
+                    _lastGame,
+                    _lastCar);
+            }
+        }
+
+        public void SaveFrom(ESP32SimWheel.IDevice device)
+        {
+            if ((_lastGame.Length == 0) || (_lastCar.Length == 0) || !BindToGameAndCar)
+                return;
+            if (device.Clutch == null)
+                return;
+            DeviceGameAndCarSettings item = Find(device.UniqueID);
+            if (item == null)
+            {
+                item = new DeviceGameAndCarSettings();
+                item.DeviceID = device.UniqueID;
+                item.Game = _lastGame;
+                item.Car = _lastCar;
+                _deviceGameAndCarSettings.Add(item);
+            }
+            if (device.Clutch != null)
+            {
+                item.WorkingMode = device.Clutch.ClutchWorkingMode;
+                item.BitePoint = device.Clutch.BitePoint;
+            }
+            SimHub.Logging.Current.InfoFormat("[ESP32Simwheel] [Settings] Saved {0}/{1}/{2}",
+                device.HidInfo.DisplayName,
+                _lastGame,
+                _lastCar);
+        }
+
+        private DeviceGameAndCarSettings Find(ulong deviceID)
+        {
+            foreach (DeviceGameAndCarSettings item in _deviceGameAndCarSettings)
+            {
+                if ((item.DeviceID == deviceID) && (item.Game == _lastGame) && (item.Car == _lastCar))
+                    return item;
+            }
+            return null;
         }
 
         public void RemoveClutchSettings(ulong deviceID, string game, string car)
@@ -82,7 +111,7 @@ namespace Afpineda.ESP32SimWheelPlugin
             if ((game.Length == 0) || (car.Length == 0))
                 return;
 
-            foreach (ClutchSettings item in _clutchSettings)
+            foreach (DeviceGameAndCarSettings item in _deviceGameAndCarSettings)
             {
                 if ((item.DeviceID == deviceID) && (item.Game == game) && (item.Car == car))
                 {
@@ -90,38 +119,15 @@ namespace Afpineda.ESP32SimWheelPlugin
                         deviceID,
                         game,
                         car);
-                    _clutchSettings.Remove(item);
+                    _deviceGameAndCarSettings.Remove(item);
                     return;
                 }
             }
         }
 
-        public void LoadClutchSettings(
-            ulong deviceID,
-            string game,
-            string car,
-            out byte? bitePoint,
-            out ClutchWorkingModes? workingMode)
-        {
-            if ((game.Length > 0) && (car.Length > 0))
-                foreach (ClutchSettings item in _clutchSettings)
-                {
-                    if ((item.DeviceID == deviceID) && (item.Game == game) && (item.Car == car))
-                    {
-                        SimHub.Logging.Current.InfoFormat("[ESP32Simwheel] [ClutchSettings] Loaded {0:X},{1},{2}",
-                            deviceID,
-                            game,
-                            car);
-                        bitePoint = item.BitePoint;
-                        workingMode = item.WorkingMode;
-                        return;
-                    }
-                }
-            bitePoint = null;
-            workingMode = null;
-        }
-
-        private readonly List<ClutchSettings> _clutchSettings = new List<ClutchSettings>();
+        private readonly List<DeviceGameAndCarSettings> _deviceGameAndCarSettings = new List<DeviceGameAndCarSettings>();
+        private string _lastGame = "";
+        private string _lastCar = "";
     } // class CustomSettings
 
 

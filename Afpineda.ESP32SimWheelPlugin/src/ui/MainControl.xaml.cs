@@ -53,24 +53,13 @@ namespace Afpineda.ESP32SimWheelPlugin
 
         private void OnTimer(object sender, EventArgs e)
         {
-
             if (SelectDeviceCombo.ItemsSource == null)
                 return;
 
             // if a device is selected, read device state and
             // update UI elements only if there are changes
             if ((SelectedDevice != null) && SelectedDevice.Refresh())
-            {
                 UpdateUIFromDeviceState();
-                if (SelectedDevice.Clutch != null)
-                    Plugin.Settings.SaveClutchSettingsWhenNeeded(
-                        SelectedDevice.UniqueID,
-                        _currentGame,
-                        _currentCar,
-                        SelectedDevice.Clutch.BitePoint,
-                        SelectedDevice.Clutch.ClutchWorkingMode);
-            }
-
         }
 
         private void UpdateUIFromDeviceState()
@@ -154,10 +143,6 @@ namespace Afpineda.ESP32SimWheelPlugin
                     TabVisible(ClutchPage, SelectedDevice.Capabilities.HasClutch);
                     MainPages.SelectedIndex = 0;
 
-                    // Send stored clutch state to device if needed
-                    if (Plugin.Settings.BindToGameAndCar)
-                        LoadClutchSettingsIntoDevice();
-
                     // Read device state and update dynamic UI elements
                     SelectedDevice.Refresh();
                     UpdateUIFromDeviceState();
@@ -195,6 +180,8 @@ namespace Afpineda.ESP32SimWheelPlugin
 
         private void RefreshButton_click(object sender, System.Windows.RoutedEventArgs e)
         {
+            Plugin.Refresh();
+
             // Remember current device selection
             ESP32SimWheel.IDevice currentDevice = SelectedDevice;
             ESP32SimWheel.IDevice autoSelection = null;
@@ -251,28 +238,6 @@ namespace Afpineda.ESP32SimWheelPlugin
         private void OnBindToGameCarChanged(object sender, RoutedEventArgs e)
         {
             Plugin.Settings.BindToGameAndCar = BindToGameCarCheckbox.IsChecked ?? false;
-            if ((SelectedDevice != null) && (_currentGame.Length > 0) && (_currentCar.Length > 0))
-            {
-                if (Plugin.Settings.BindToGameAndCar)
-                    LoadClutchSettingsIntoDevice();
-                else
-                {
-                    // var choice = SHMessageBox.Show(
-                    //     "Discard the saved bite point for this game and this car?",
-                    //     string.Format("{0} / {1}", _currentGame, _currentCar),
-                    //     System.Windows.MessageBoxButton.OKCancel,
-                    //     System.Windows.MessageBoxImage.Question).
-                    //         GetAwaiter().GetResult();
-                    var choice = System.Windows.MessageBox.Show(
-                        "Discard the saved clutch settings for this game and this car?",
-                        string.Format("{0} / {1}", _currentGame, _currentCar),
-                        System.Windows.MessageBoxButton.YesNo,
-                        System.Windows.MessageBoxImage.Question);
-                    if (choice == MessageBoxResult.Yes)
-                        // if (choice == DialogResult.Yes)
-                        Plugin.Settings.RemoveClutchSettings(SelectedDevice.UniqueID, _currentGame, _currentCar);
-                }
-            }
         }
 
         // --------------------------------------------------------
@@ -281,8 +246,6 @@ namespace Afpineda.ESP32SimWheelPlugin
 
         public void OnGameCarChange(string game, string car)
         {
-            _currentGame = game;
-            _currentCar = car;
             if ((game.Length == 0) || (car.Length == 0))
                 GameAndCarText.Text = "none";
             else
@@ -290,8 +253,6 @@ namespace Afpineda.ESP32SimWheelPlugin
                     "{0} / {1}",
                     game,
                     car);
-            if ((SelectedDevice != null) && (SelectedDevice.Clutch != null) && Plugin.Settings.BindToGameAndCar)
-                LoadClutchSettingsIntoDevice();
         }
 
         // --------------------------------------------------------
@@ -320,31 +281,12 @@ namespace Afpineda.ESP32SimWheelPlugin
             }
         }
 
-        private void LoadClutchSettingsIntoDevice()
-        {
-            byte? bitePoint;
-            ClutchWorkingModes? workingMode;
-            Plugin.Settings.LoadClutchSettings(
-                SelectedDevice.UniqueID,
-                _currentGame,
-                _currentCar,
-                out bitePoint,
-                out workingMode
-            );
-            if (bitePoint != null)
-                SelectedDevice.Clutch.BitePoint = (byte)bitePoint;
-            if (workingMode != null)
-                SelectedDevice.Clutch.ClutchWorkingMode = (ClutchWorkingModes)workingMode;
-        }
-
         // --------------------------------------------------------
         // Private Fields and properties
         // --------------------------------------------------------
 
         private bool _updating = false;
         private readonly DispatcherTimer _updateTimer;
-        private string _currentGame = "";
-        private string _currentCar = "";
 
         private ESP32SimWheel.IDevice SelectedDevice
         {

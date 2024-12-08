@@ -33,7 +33,7 @@ namespace ESP32SimWheel
         public Capabilities Capabilities { get { return _capabilities; } set { _capabilities = value; } }
         public HidInfo HidInfo { get { return _hidInfo; } set { _hidInfo = value; } }
         public DataVersion DataVersion { get { return _dataVersion; } set { _dataVersion = value; } }
-        public IClutch Clutch { get { return this; } }
+        public IClutch Clutch { get { if (_capabilities.HasClutch) return this; else return null; } }
         public IAnalogClutch AnalogClutch { get { return null; } }
         public ISecurityLock SecurityLock { get { return this; } }
         public IBattery Battery { get { if (_capabilities.HasBattery) return this; else return null; } }
@@ -110,13 +110,12 @@ namespace ESP32SimWheel
         {
             get
             {
-
                 return _batteryLevel;
             }
             set
             {
+                _updated = (_batteryLevel != value);
                 _batteryLevel = value;
-                _updated = true;
             }
         }
 
@@ -131,7 +130,7 @@ namespace ESP32SimWheel
             get { return _isLocked; }
             set
             {
-                _updated = true;
+                _updated = (_isLocked != value);
                 _isLocked = value;
             }
         }
@@ -166,7 +165,7 @@ namespace ESP32SimWheel
             get { return _clutchWorkingMode; }
             set
             {
-                _updated = true;
+                _updated = (_clutchWorkingMode != value);
                 _clutchWorkingMode = value;
                 SimHub.Logging.Current.InfoFormat(
                     "[FakeDeviceESP32] Clutch working mode = {0}",
@@ -180,7 +179,7 @@ namespace ESP32SimWheel
             {
                 if (_bitePoint < 255)
                 {
-                    _updated = true;
+                    _updated = (_bitePoint != value);
                     _bitePoint = value;
                     SimHub.Logging.Current.InfoFormat(
                         "[FakeDeviceESP32] Bite point = {0}",

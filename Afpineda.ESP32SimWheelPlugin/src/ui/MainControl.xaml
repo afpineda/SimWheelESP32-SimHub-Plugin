@@ -11,6 +11,27 @@
              xmlns:iconpacks="clr-namespace:MahApps.Metro.IconPacks;assembly=MahApps.Metro.IconPacks.Material">
     <ScrollViewer x:Name="Root">
         <StackPanel>
+            <DockPanel Margin="10,10,10,10">
+                <styles:SHToggleCheckbox Margin="1,0,40,0"
+                                         x:Name="BindToGameCarCheckbox"
+                                         Checked="OnBindToGameCarChanged"
+                                         Unchecked="OnBindToGameCarChanged">
+                    Bind to current game and car
+                </styles:SHToggleCheckbox>
+                <StackPanel Orientation="Horizontal"
+                            DockPanel.Dock="Right">
+                    <TextBlock VerticalAlignment="Center"
+                               Margin="0,0,20,0">
+                        <Bold>Game / Car:</Bold>
+                    </TextBlock>
+                    <TextBlock VerticalAlignment="Center"
+                               x:Name="GameAndCarText">
+                        ??? / ???
+                    </TextBlock>
+                </StackPanel>
+                <TextBlock />
+            </DockPanel>
+            <styles:SHSectionSeparator />
             <Grid Margin="0,0,0,20"
                   x:Name="SelectDeviceGroup">
                 <Grid.ColumnDefinitions>
@@ -90,28 +111,7 @@
                                   x:Name="ClutchPage">
                     <StackPanel>
                         <TextBlock />
-                        <DockPanel>
-                            <styles:SHToggleCheckbox Margin="1,0,40,0"
-                                                     x:Name="BindToGameCarCheckbox"
-                                                     Checked="OnBindToGameCarChanged"
-                                                     Unchecked="OnBindToGameCarChanged">
-                                Bind to current game and car
-                            </styles:SHToggleCheckbox>
-                            <StackPanel Orientation="Horizontal"
-                                        DockPanel.Dock="Right">
-                                <TextBlock VerticalAlignment="Center"
-                                           Margin="0,0,20,0">
-                                    <Bold>Game / Car:</Bold>
-                                </TextBlock>
-                                <TextBlock VerticalAlignment="Center"
-                                           x:Name="GameAndCarText">
-                                    ??? / ???
-                                </TextBlock>
-                            </StackPanel>
-                            <TextBlock />
-                        </DockPanel>
                         <StackPanel x:Name="ClutchPaddlesGroup">
-                            <styles:SHSectionSeparator />
                             <styles:SHExpander IsExpanded="True">
                                 <styles:SHExpander.Header>
                                     Working mode

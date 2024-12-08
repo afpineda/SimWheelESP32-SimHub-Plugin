@@ -10,9 +10,11 @@
 using GameReaderCommon;
 using SimHub.Plugins;
 using System;
+using System.Linq;
 using System.Windows.Media;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using ESP32SimWheel;
 
 namespace Afpineda.ESP32SimWheelPlugin
@@ -26,7 +28,7 @@ namespace Afpineda.ESP32SimWheelPlugin
         /// <summary>
         /// User settings
         /// </summary>
-        public CustomSettings Settings;
+        public CustomSettings Settings { get; private set; }
 
         /// <summary>
         /// Instance of the current plugin manager
@@ -54,57 +56,110 @@ namespace Afpineda.ESP32SimWheelPlugin
         /// <param name="data">Current game data, including current and previous data frame.</param>
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
-            GameAndCarUpdate(ref data);
-            TelemetryDataUpdate(ref data);
+            try
+            {
+                if (data.GamePaused && !_gamePaused)
+                    _refreshDeviceList = true;
+                _gamePaused = data.GamePaused;
+
+                MonitorGameAndCar(ref data);
+                UpdateDeviceListWhenNeeded();
+                SendTelemetryData(ref data);
+                MonitorDevices();
+            }
+            catch (Exception ex)
+            {
+                SimHub.Logging.Current.InfoFormat("[ESP32 Sim-wheel] Refreshing due to {0}", ex.ToString());
+                _refreshDeviceList = true;
+            }
         }
 
-        private void GameAndCarUpdate(ref GameData data)
+        public void UpdateDeviceListWhenNeeded()
+        {
+            if (_refreshDeviceList)
+            {
+                SimHub.Logging.Current.Info("[ESP32 Sim-wheel] Refreshing device list");
+                _refreshDeviceList = false;
+                // Save all device settings before refreshing,
+                // since an existing device may not appear in the
+                // new list
+                foreach (var device in _devices)
+                    Settings.SaveFrom(device);
+
+                // Obtain a new list of available devices
+                _devices = ESP32SimWheel.Devices.Enumerate().ToArray();
+
+                int count = 0;
+                foreach (var device in _devices)
+                {
+                    count++;
+                    // Reload settings since a new
+                    // device may appear
+                    Settings.ApplyTo(device);
+                    // Log
+                    SimHub.Logging.Current.InfoFormat(
+                            "[ESP32 Sim-wheel] Found: '{0}'",
+                            device.HidInfo.DisplayName);
+                }
+                SimHub.Logging.Current.InfoFormat(
+                    "[ESP32 Sim-wheel] Refresh: {0} devices found",
+                    count);
+
+                // Restart timer
+                _deviceMonitorTimer.Restart();
+            }
+        }
+
+        private void SendTelemetryData(ref GameData data)
+        {
+            if ((data.GameRunning) && (data.NewData != null))
+            {
+                foreach (var device in _devices)
+                {
+                    if ((device.TelemetryData != null) &&
+                        !device.TelemetryData.SendTelemetry(ref data))
+                        _refreshDeviceList = true;
+                }
+            }
+        }
+
+        private void MonitorGameAndCar(ref GameData data)
         {
             if (data.NewData != null)
             {
                 string currentCar = (data.NewData.CarId ?? "");
                 string currentGame = (data.GameName ?? "");
-                if ((currentCar != _lastCar) || (currentGame != _lastGame))
+
+                if (Settings.UpdateGameAndCar(currentCar, currentGame))
                 {
-                    _lastCar = currentCar;
-                    _lastGame = currentGame;
+                    // Game or car has changed
+                    // Apply stored settings to each device
+                    foreach (var device in _devices)
+                        Settings.ApplyTo(device);
+
+                    // Notify UI
                     _mainControl.Dispatcher.Invoke(() => _mainControl.OnGameCarChange(currentGame, currentCar));
                 }
             }
         }
 
-        private void TelemetryDataUpdate(ref GameData data)
+        private void MonitorDevices()
         {
-            if ((data.GameRunning) && (data.NewData != null))
-            {
-                if (_refreshDeviceList)
+            if (_deviceMonitorTimer.ElapsedMilliseconds > DEVICE_MONITOR_INTERVAL_MS)
+                try
                 {
-                    _refreshDeviceList = false;
-                    _devices = ESP32SimWheel.Devices.EnumerateTelemetryDataCapable();
-                    int count = 0;
                     foreach (var device in _devices)
                     {
-                        count++;
-                        SimHub.Logging.Current.InfoFormat(
-                                "[ESP32 Sim-wheel] Found: '{0}' (v{1}.{2})",
-                                device.HidInfo.DisplayName,
-                                device.DataVersion.Major,
-                                device.DataVersion.Minor);
+                        if (device.Refresh())
+                            Settings.SaveFrom(device);
                     }
-                    SimHub.Logging.Current.InfoFormat(
-                        "[ESP32 Sim-wheel] Refresh: {0} devices found",
-                        count);
                 }
-
-                foreach (var device in _devices)
+                finally
                 {
-                    if (!device.TelemetryData.SendTelemetry(ref data))
-                        _refreshDeviceList = true;
+                    _deviceMonitorTimer.Restart();
                 }
-            }
-            else
-                _refreshDeviceList = true;
         }
+
 
         /// <summary>
         /// Returns the settings control, return null if no settings control is required
@@ -129,6 +184,7 @@ namespace Afpineda.ESP32SimWheelPlugin
 #endif
             SimHub.Logging.Current.Info("[ESP32 Sim-wheel] Init");
             _refreshDeviceList = true;
+            _deviceMonitorTimer.Restart();
             // Load settings
             Settings = this.ReadCommonSettings<CustomSettings>(
                 "GeneralSettings",
@@ -156,9 +212,10 @@ namespace Afpineda.ESP32SimWheelPlugin
 
         private bool _refreshDeviceList = true;
 
-        private IEnumerable<ESP32SimWheel.IDevice> _devices;
-        private string _lastGame = "";
-        private string _lastCar = "";
+        private ESP32SimWheel.IDevice[] _devices = new ESP32SimWheel.IDevice[0];
         private MainControl _mainControl = null;
+        private bool _gamePaused = false;
+        private readonly Stopwatch _deviceMonitorTimer = new Stopwatch();
+        private const int DEVICE_MONITOR_INTERVAL_MS = 1000;
     }
 }
