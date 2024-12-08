@@ -1,7 +1,7 @@
 #region License
 /******************************************************************************
  * @author Ángel Fernández Pineda. Madrid. Spain.
- * @date 2024-10-05
+ * @date 2024-12-04
  *
  * @copyright Licensed under the EUPL
  *****************************************************************************/
@@ -9,7 +9,7 @@
 
 using System;
 
-namespace Afpineda.ESP32SimWheelPlugin
+namespace ESP32SimWheel
 {
     public class UnsupportedDeviceException : Exception
     {

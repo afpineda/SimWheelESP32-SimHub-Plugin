@@ -1,0 +1,4 @@
+Note:
+
+The documentation for HidSharp does not come from the official package published 
+in NuGet.org. It comes from a fork.
