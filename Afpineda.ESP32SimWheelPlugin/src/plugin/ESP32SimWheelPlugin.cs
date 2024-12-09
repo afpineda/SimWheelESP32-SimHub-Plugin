@@ -170,9 +170,6 @@ namespace Afpineda.ESP32SimWheelPlugin
         /// <param name="pluginManager"></param>
         public void Init(PluginManager pluginManager)
         {
-#if DEBUG
-            Devices.UseFakeDevices();
-#endif
             // Load settings
             Settings = this.ReadCommonSettings<CustomSettings>(
                 "GeneralSettings",

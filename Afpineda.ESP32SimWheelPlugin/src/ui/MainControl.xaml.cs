@@ -55,9 +55,6 @@ namespace Afpineda.ESP32SimWheelPlugin
 
         private void OnTimer(object sender, EventArgs e)
         {
-            if (SelectDeviceCombo.ItemsSource == null)
-                return;
-
             // if a device is selected, read device state and
             // update UI elements only if there are changes
             if ((SelectedDevice != null) && SelectedDevice.Refresh())
