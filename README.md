@@ -4,6 +4,7 @@ This project provides a [SimHub](https://www.simhubdash.com/)
 plugin to send telemetry data to
 [ESP32 open-source](https://github.com/afpineda/OpenSourceSimWheelESP32)
 sim-wheels and button boxes.
+Basic device settings can also be configured.
 
 ## Installing
 
