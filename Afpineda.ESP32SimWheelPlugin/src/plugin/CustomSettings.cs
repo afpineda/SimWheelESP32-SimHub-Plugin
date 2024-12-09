@@ -73,6 +73,8 @@ namespace Afpineda.ESP32SimWheelPlugin
         {
             if ((_lastGame.Length == 0) || (_lastCar.Length == 0) || !BindToGameAndCar)
                 return;
+            if ((device.Clutch == null) && (device.AltButtons == null) && (device.DPad == null))
+                return;
             DeviceGameAndCarSettings settings = Find(device.UniqueID);
             if (settings != null)
             {

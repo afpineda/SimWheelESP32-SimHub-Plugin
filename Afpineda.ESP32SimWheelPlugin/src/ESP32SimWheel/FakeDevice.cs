@@ -113,7 +113,8 @@ namespace ESP32SimWheel
                 _updated = (_dPadWorkingMode != value);
                 _dPadWorkingMode = value;
                 SimHub.Logging.Current.InfoFormat(
-                    "[FakeDeviceESP32] DPAD working mode = {0}",
+                    "[FakeDeviceESP32] [{0}] DPAD working mode = {1}",
+                    _hidInfo.DisplayName,
                     _dPadWorkingMode);
             }
         }
@@ -131,7 +132,8 @@ namespace ESP32SimWheel
                 _updated = (_altButtonsWorkingMode != value);
                 _altButtonsWorkingMode = value;
                 SimHub.Logging.Current.InfoFormat(
-                    "[FakeDeviceESP32] ALT buttons working mode = {0}",
+                    "[FakeDeviceESP32] [{0}] ALT buttons working mode = {1}",
+                    _hidInfo.DisplayName,
                     _altButtonsWorkingMode);
             }
         }
@@ -143,7 +145,9 @@ namespace ESP32SimWheel
 
         public void ForceBatteryCalibration()
         {
-            SimHub.Logging.Current.Info("[FakeDeviceESP32] ForceBatteryCalibration()");
+            SimHub.Logging.Current.InfoFormat(
+                "[FakeDeviceESP32] [{0}] ForceBatteryCalibration()",
+                _hidInfo.DisplayName);
         }
 
         public byte BatteryLevel
@@ -195,7 +199,9 @@ namespace ESP32SimWheel
 
         public bool SendTelemetry(ref GameData data)
         {
-            SimHub.Logging.Current.Info("[FakeDeviceESP32] SendTelemetry()");
+            SimHub.Logging.Current.InfoFormat(
+                "[FakeDeviceESP32] [{0}] SendTelemetry()",
+                _hidInfo.DisplayName);
             return true;
         }
 
@@ -211,7 +217,8 @@ namespace ESP32SimWheel
                 _updated = (_clutchWorkingMode != value);
                 _clutchWorkingMode = value;
                 SimHub.Logging.Current.InfoFormat(
-                    "[FakeDeviceESP32] Clutch working mode = {0}",
+                    "[FakeDeviceESP32] [{0}] Clutch working mode = {1}",
+                    _hidInfo.DisplayName,
                     _clutchWorkingMode);
             }
         }
@@ -220,12 +227,13 @@ namespace ESP32SimWheel
             get { return _bitePoint; }
             set
             {
-                if (_bitePoint < 255)
+                if (value < 255)
                 {
                     _updated = (_bitePoint != value);
                     _bitePoint = value;
                     SimHub.Logging.Current.InfoFormat(
-                        "[FakeDeviceESP32] Bite point = {0}",
+                        "[FakeDeviceESP32] [{0}] Bite point = {1}",
+                        _hidInfo.DisplayName,
                         _bitePoint);
                 }
             }
