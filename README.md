@@ -46,9 +46,11 @@ For bindings to work:
 - A game must be selected in SimHub.
 - A car must be selected in-game.
 
+Applies to all detected devices.
 The bound settings are limited to clutch paddles (working mode and bite point),
 "ALT buttons" (working mode) and DPAD (working mode).
-Applies to all detected devices.
+You can configure those device settings using SimHub,
+the companion app or the device itself.
 
 - **SimHub ➡️ device**.
   Saved settings (if any) are restored to each device when:
@@ -67,6 +69,11 @@ Select a device to configure in the combo box.
 Only basic configurable options will be shown in the corresponding tab.
 For advanced configuration use the
 [companion app](https://github.com/afpineda/SimWheelESP32Config).
+
+### Telemetry data
+
+Devices that accept raw telemetry will receive it as long as they are detected.
+There is nothing to configure.
 
 ### Troubleshooting
 
