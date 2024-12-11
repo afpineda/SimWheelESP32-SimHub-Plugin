@@ -9,7 +9,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using SimHub.Plugins.Styles;
@@ -37,8 +41,7 @@ namespace Afpineda.ESP32SimWheelPlugin
         {
             // Initialization
             this.Plugin = plugin;
-            SelectDeviceCombo.ItemsSource = AvailableDevices;
-            OnGameCarChange("", "");
+            CreateBindings();
             RefreshButton_click(this, null);
 
             // Timer to poll selected device
@@ -47,6 +50,37 @@ namespace Afpineda.ESP32SimWheelPlugin
             _updateTimer.Interval = TimeSpan.FromMilliseconds(POLLING_INTERVAL_MS);
             // The timer will be started when this control becomes visible
             IsVisibleChanged += OnVisibilityChange;
+        }
+
+        // --------------------------------------------------------
+        // Bindings
+        // --------------------------------------------------------
+
+        private void CreateBindings()
+        {
+            // BindToGameCarCheckbox
+            Binding binding = new Binding(nameof(Plugin.Settings.BindToGameAndCar));
+            binding.Source = Plugin.Settings;
+            binding.Mode = BindingMode.TwoWay;
+            BindToGameCarCheckbox.SetBinding(ToggleButton.IsCheckedProperty, binding);
+
+            // GameAndCarText
+            binding = new Binding(nameof(Plugin.Settings.CurrentGameAndCar));
+            binding.Source = Plugin.Settings;
+            GameAndCarText.SetBinding(TextBlock.TextProperty, binding);
+
+            // SaveButton
+            binding = new Binding(nameof(Plugin.Settings.IsBindingAvailable));
+            binding.Source = Plugin.Settings;
+            SaveButton.SetBinding(Button.IsEnabledProperty, binding);
+            SaveButton.Click += SaveButton_click;
+
+            // RefreshButton
+            RefreshButton.Click += RefreshButton_click;
+
+            // SelectedDeviceCombo
+            SelectDeviceCombo.ItemsSource = AvailableDevices;
+            SelectDeviceCombo.SelectionChanged += OnSelectDevice;
         }
 
         // --------------------------------------------------------
@@ -330,28 +364,10 @@ namespace Afpineda.ESP32SimWheelPlugin
         }
 
         // --------------------------------------------------------
-        // Plugin callbacks (called from CustomDataPlugin)
-        // --------------------------------------------------------
-
-        public void OnGameCarChange(string game, string car)
-        {
-            if ((game.Length == 0) || (car.Length == 0))
-                GameAndCarText.Text = "none";
-            else
-                GameAndCarText.Text = string.Format(
-                    "{0} / {1}",
-                    game,
-                    car);
-            SaveButton.IsEnabled =
-                Plugin.Settings.BindToGameAndCar &&
-                Plugin.Settings.GameAndCarAvailable;
-        }
-
-        // --------------------------------------------------------
         // Auxiliary methods
         // --------------------------------------------------------
 
-        // Show or hid tab pages
+        // Show or hide tab pages
         private void TabVisible(SimHub.Plugins.Styles.SHTabItem tabPage, bool visible)
         {
             if (tabPage.Parent == null)

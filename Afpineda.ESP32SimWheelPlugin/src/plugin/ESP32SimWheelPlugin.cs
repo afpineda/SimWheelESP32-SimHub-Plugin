@@ -138,7 +138,7 @@ namespace Afpineda.ESP32SimWheelPlugin
                     // Game or car has changed
                     ApplySettingsToAllDevices();
                     // Notify UI
-                    _mainControl.Dispatcher.Invoke(() => _mainControl.OnGameCarChange(currentGame, currentCar));
+                    // _mainControl.Dispatcher.Invoke(() => _mainControl.OnGameCarChange(currentGame, currentCar));
                 }
             }
         }

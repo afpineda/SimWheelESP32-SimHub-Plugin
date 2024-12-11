@@ -7,13 +7,21 @@
  *****************************************************************************/
 #endregion License
 
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using SimHub.Plugins;
 using ESP32SimWheel;
 
 namespace Afpineda.ESP32SimWheelPlugin
 {
+
+    //------------------------------------------------------------
+    // DeviceGameAndCarSettings
+    //------------------------------------------------------------
+
     public class DeviceGameAndCarSettings
     {
         public ulong DeviceID { get; set; } = 0;
@@ -25,17 +33,42 @@ namespace Afpineda.ESP32SimWheelPlugin
         public AltButtonWorkingModes AltButtonsWorkingMode { get; set; } = AltButtonWorkingModes.ALT;
     }
 
-    public class CustomSettings
+    //------------------------------------------------------------
+    // Main class
+    //------------------------------------------------------------
+
+    public class CustomSettings : INotifyPropertyChanged
     {
+        //------------------------------------------------------------
+        // INotifyPropertyChanged implementation
+        //------------------------------------------------------------
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        //------------------------------------------------------------
+        // Public properties
+        //------------------------------------------------------------
+
         public bool BindToGameAndCar
         {
             get { return _bindToGameAndCar; }
             set
             {
-                _bindToGameAndCar = value;
-                OnBindToGameAndCar?.Invoke(value);
+                if (value != _bindToGameAndCar)
+                {
+                    _bindToGameAndCar = value;
+                    OnBindToGameAndCar?.Invoke(value);
+                    NotifyPropertyChanged();
+                    NotifyPropertyChanged(nameof(this.IsBindingAvailable));
+                }
             }
         }
+
         public DeviceGameAndCarSettings[] DeviceGameAndCarSettings
         {
             get
@@ -47,9 +80,26 @@ namespace Afpineda.ESP32SimWheelPlugin
                 _deviceGameAndCarSettings.Clear();
                 foreach (var setting in value)
                     _deviceGameAndCarSettings.Add(setting);
+                NotifyPropertyChanged();
             }
         }
 
+        [JsonIgnore]
+        public string CurrentGameAndCar
+        {
+            get
+            {
+                if ((_lastGame.Length == 0) || (_lastCar.Length == 0))
+                    return "(none)";
+                else
+                    return string.Format(
+                        "{0} / {1}",
+                        _lastGame,
+                        _lastCar);
+            }
+        }
+
+        [JsonIgnore]
         public bool GameAndCarAvailable
         {
             get
@@ -58,12 +108,27 @@ namespace Afpineda.ESP32SimWheelPlugin
             }
         }
 
+        [JsonIgnore]
+        public bool IsBindingAvailable
+        {
+            get
+            {
+                return BindToGameAndCar && GameAndCarAvailable;
+            }
+        }
+
+        //------------------------------------------------------------
+        // Public methods
+        //------------------------------------------------------------
+
         public bool UpdateGameAndCar(string game, string car)
         {
             if ((game != _lastGame) || (car != _lastCar))
             {
                 _lastGame = game;
                 _lastCar = car;
+                NotifyPropertyChanged(nameof(this.CurrentGameAndCar));
+                NotifyPropertyChanged(nameof(this.IsBindingAvailable));
                 return true;
             }
             return false;
@@ -145,14 +210,21 @@ namespace Afpineda.ESP32SimWheelPlugin
             return null;
         }
 
+        //------------------------------------------------------------
+        // CLR bindings
+        //------------------------------------------------------------
+
         public delegate void BindToGameAndCarNotify(bool state);
         public event BindToGameAndCarNotify OnBindToGameAndCar;
+
+        //------------------------------------------------------------
+        // Private fields and properties
+        //------------------------------------------------------------
 
         private readonly List<DeviceGameAndCarSettings> _deviceGameAndCarSettings = new List<DeviceGameAndCarSettings>();
         private string _lastGame = "";
         private string _lastCar = "";
         private bool _bindToGameAndCar = false;
     } // class CustomSettings
-
 
 } // namespace Afpineda.ESP32SimWheelPlugin

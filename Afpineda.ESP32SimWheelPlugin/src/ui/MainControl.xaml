@@ -18,9 +18,7 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0">
                     <styles:SHToggleCheckbox Margin="1,20,20,1"
-                                             x:Name="BindToGameCarCheckbox"
-                                             Checked="OnBindToGameCarChanged"
-                                             Unchecked="OnBindToGameCarChanged">
+                                             x:Name="BindToGameCarCheckbox">
                         Bind to current game and car
                     </styles:SHToggleCheckbox>
                     <StackPanel Orientation="Horizontal"
@@ -36,9 +34,7 @@
                     </StackPanel>
                 </StackPanel>
                 <StackPanel Grid.Column="1">
-                    <styles:SHButtonPrimary x:Name="SaveButton"
-                                            Click="SaveButton_click"
-                                            IsEnabled="{Binding SaveEnabled}">
+                    <styles:SHButtonPrimary x:Name="SaveButton">
                         <StackPanel Orientation="Horizontal">
                             <iconpacks:PackIconMaterial Kind="LinkBox"
                                                         Height="20"
@@ -49,7 +45,7 @@
                             </TextBlock>
                         </StackPanel>
                     </styles:SHButtonPrimary>
-                    <styles:SHButtonPrimary Click="RefreshButton_click">
+                    <styles:SHButtonPrimary x:Name="RefreshButton">
                         <StackPanel Orientation="Horizontal">
                             <iconpacks:PackIconMaterial Kind="Refresh"
                                                         Height="20"
@@ -65,14 +61,14 @@
             <styles:SHSectionSeparator />
             <ComboBox Grid.Column="0"
                       Margin="20,20,20,20"
-                      x:Name="SelectDeviceCombo"
-                      SelectionChanged="OnSelectDevice">
+                      x:Name="SelectDeviceCombo">
                 <ComboBox.ItemTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
                             <iconpacks:PackIconMaterial Kind="Steering"
                                                         VerticalAlignment="Center" />
-                            <TextBlock Text="{Binding HidInfo.DisplayName}"
+                            <TextBlock x:Name="SelectDeviceComboItem"
+                                       Text="{Binding HidInfo.DisplayName}"
                                        Margin="5,5,5,5"
                                        VerticalAlignment="Center" />
                         </StackPanel>
