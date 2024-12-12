@@ -11,12 +11,35 @@
              xmlns:iconpacks="clr-namespace:MahApps.Metro.IconPacks;assembly=MahApps.Metro.IconPacks.Material">
     <ScrollViewer x:Name="Root">
         <StackPanel>
-            <Grid Margin="0,0,0,10">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1*" />
-                    <ColumnDefinition Width="2*" />
-                </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0">
+            <styles:SHLeftRightWrapper MinimumLeftWidth="400"
+                                       CenterSpace="0">
+                <styles:SHLeftRightWrapper.RightItem>
+                    <StackPanel>
+                        <styles:SHButtonPrimary x:Name="SaveButton">
+                            <StackPanel Orientation="Horizontal">
+                                <iconpacks:PackIconMaterial Kind="LinkBox"
+                                                            Height="20"
+                                                            Width="20" />
+                                <TextBlock VerticalAlignment="Center"
+                                           Margin="15,0,0,0">
+                                    Bind current settings of all devices to current game/car
+                                </TextBlock>
+                            </StackPanel>
+                        </styles:SHButtonPrimary>
+                        <styles:SHButtonPrimary x:Name="RefreshButton">
+                            <StackPanel Orientation="Horizontal">
+                                <iconpacks:PackIconMaterial Kind="Refresh"
+                                                            Height="20"
+                                                            Width="20" />
+                                <TextBlock VerticalAlignment="Center"
+                                           Margin="15,0,0,0">
+                                    Refresh
+                                </TextBlock>
+                            </StackPanel>
+                        </styles:SHButtonPrimary>
+                    </StackPanel>
+                </styles:SHLeftRightWrapper.RightItem>
+                <StackPanel>
                     <styles:SHToggleCheckbox Margin="1,20,20,1"
                                              x:Name="BindToGameCarCheckbox">
                         Bind to current game and car
@@ -33,31 +56,7 @@
                         </TextBlock>
                     </StackPanel>
                 </StackPanel>
-                <StackPanel Grid.Column="1">
-                    <styles:SHButtonPrimary x:Name="SaveButton">
-                        <StackPanel Orientation="Horizontal">
-                            <iconpacks:PackIconMaterial Kind="LinkBox"
-                                                        Height="20"
-                                                        Width="20" />
-                            <TextBlock VerticalAlignment="Center"
-                                       Margin="15,0,0,0">
-                                Bind current settings of all devices to current game/car
-                            </TextBlock>
-                        </StackPanel>
-                    </styles:SHButtonPrimary>
-                    <styles:SHButtonPrimary x:Name="RefreshButton">
-                        <StackPanel Orientation="Horizontal">
-                            <iconpacks:PackIconMaterial Kind="Refresh"
-                                                        Height="20"
-                                                        Width="20" />
-                            <TextBlock VerticalAlignment="Center"
-                                       Margin="15,0,0,0">
-                                Refresh
-                            </TextBlock>
-                        </StackPanel>
-                    </styles:SHButtonPrimary>
-                </StackPanel>
-            </Grid>
+            </styles:SHLeftRightWrapper>
             <styles:SHSectionSeparator />
             <ComboBox Grid.Column="0"
                       Margin="20,20,20,20"
