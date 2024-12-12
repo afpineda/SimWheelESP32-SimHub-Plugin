@@ -17,6 +17,10 @@ using System.Windows.Data;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using SimHub.Plugins.Styles;
+using SimHub.Plugins.DataPlugins.RGBDriver;
+using SimHub.Plugins.DataPlugins.RGBDriver.Settings;
+using SimHub.Plugins.OutputPlugins.GraphicalDash.UI;
+using SimHub.Plugins.ProfilesCommon;
 using ESP32SimWheel;
 
 namespace Afpineda.ESP32SimWheelPlugin
@@ -81,6 +85,22 @@ namespace Afpineda.ESP32SimWheelPlugin
             // SelectedDeviceCombo
             SelectDeviceCombo.ItemsSource = AvailableDevices;
             SelectDeviceCombo.SelectionChanged += OnSelectDevice;
+
+            // LEDs driver: TelemetryLedsGroup
+            TelemetryLedsEditProfile.Click += LedsEditProfile_Click;
+            TelemetryLedsImportProfile.Click += LedsImportProfile_Click;
+            TelemetryLedsLoadProfile.Click += LedsLoadProfile_Click;
+
+            // LEDs driver: ButtonLedsGroup
+            ButtonLedsEditProfile.Click += LedsEditProfile_Click;
+            ButtonLedsImportProfile.Click += LedsImportProfile_Click;
+            ButtonLedsLoadProfile.Click += LedsLoadProfile_Click;
+
+            // LEDs driver: IndividualLedsGroup
+            IndividualLedsEditProfile.Click += LedsEditProfile_Click;
+            IndividualLedsImportProfile.Click += LedsImportProfile_Click;
+            IndividualLedsLoadProfile.Click += LedsLoadProfile_Click;
+
         }
 
         // --------------------------------------------------------
@@ -213,6 +233,17 @@ namespace Afpineda.ESP32SimWheelPlugin
                         TelemetryDataText.Text = string.Format("Yes ({0} frames per second)", SelectedDevice.Capabilities.FramesPerSecond);
                     else
                         TelemetryDataText.Text = "No";
+
+                    TelemetryLedsGroup.IsEnabled = (SelectedDevice.Capabilities.TelemetryLedsCount > 0);
+                    ButtonLedsGroup.IsEnabled = (SelectedDevice.Capabilities.ButtonsLightingCount > 0);
+                    IndividualLedsGroup.IsEnabled = (SelectedDevice.Capabilities.IndividualLedsCount > 0);
+                    TelemetryLedsGroup.Visibility =
+                        (TelemetryLedsGroup.IsEnabled) ? Visibility.Visible : Visibility.Collapsed;
+                    ButtonLedsGroup.Visibility =
+                        (ButtonLedsGroup.IsEnabled) ? Visibility.Visible : Visibility.Collapsed;
+                    IndividualLedsGroup.Visibility =
+                        (IndividualLedsGroup.IsEnabled) ? Visibility.Visible : Visibility.Collapsed;
+
                     TabVisible(ClutchPage, SelectedDevice.Capabilities.HasClutch);
                     TabVisible(AltButtonsPage, SelectedDevice.Capabilities.HasAltButtons);
                     TabVisible(DPadPage, SelectedDevice.Capabilities.HasDPad);
@@ -220,6 +251,7 @@ namespace Afpineda.ESP32SimWheelPlugin
                     MainPages.SelectedIndex = 0;
 
                     // Read device state and update dynamic UI elements
+                    UpdateLedsDrivers();
                     SelectedDevice.Refresh();
                     UpdateUIFromDeviceState();
                 }
@@ -363,6 +395,64 @@ namespace Afpineda.ESP32SimWheelPlugin
                 }
         }
 
+        private void LedsEditProfile_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            if (SelectedDevice != null)
+            {
+                RGBLedsDriver driver = null;
+                string subtitle = null;
+                if (sender == TelemetryLedsEditProfile)
+                {
+                    driver = _rgbLedsDriver[(int)PixelGroups.TelemetryLeds];
+                    subtitle = TelemetryLedsGroup.Title;
+                }
+                if (sender == ButtonLedsEditProfile)
+                {
+                    driver = _rgbLedsDriver[(int)PixelGroups.ButtonsLighting];
+                    subtitle = ButtonLedsGroup.Title;
+                }
+                if (sender == IndividualLedsEditProfile)
+                {
+                    driver = _rgbLedsDriver[(int)PixelGroups.IndividualLeds];
+                    subtitle = ButtonLedsGroup.Title;
+                }
+                driver?.ShowEditorWindow(
+                    this,
+                    SelectedDevice.HidInfo.DisplayName,
+                    subtitle);
+            }
+        }
+
+        private void LedsImportProfile_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            RGBLedsDriver driver = null;
+            if (sender == TelemetryLedsImportProfile)
+                driver = _rgbLedsDriver[(int)PixelGroups.TelemetryLeds];
+            if (sender == ButtonLedsImportProfile)
+                driver = _rgbLedsDriver[(int)PixelGroups.ButtonsLighting];
+            if (sender == IndividualLedsImportProfile)
+                driver = _rgbLedsDriver[(int)PixelGroups.IndividualLeds];
+            if (driver != null)
+                new ProfilesManager<Profile, LedsSettings>(
+                    (IProfileSettings<Profile>)driver.Settings).
+                        importProfile_Click((object)null, (RoutedEventArgs)null);
+        }
+
+        private void LedsLoadProfile_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            RGBLedsDriver driver = null;
+            if (sender == TelemetryLedsLoadProfile)
+                driver = _rgbLedsDriver[(int)PixelGroups.TelemetryLeds];
+            if (sender == ButtonLedsLoadProfile)
+                driver = _rgbLedsDriver[(int)PixelGroups.ButtonsLighting];
+            if (sender == IndividualLedsLoadProfile)
+                driver = _rgbLedsDriver[(int)PixelGroups.IndividualLeds];
+            if (driver != null)
+                new ProfilesManager<Profile, LedsSettings>(
+                (IProfileSettings<Profile>)driver.Settings).
+                    ShowDialogWindow((DependencyObject)this);
+        }
+
         // --------------------------------------------------------
         // Auxiliary methods
         // --------------------------------------------------------
@@ -397,6 +487,37 @@ namespace Afpineda.ESP32SimWheelPlugin
             }
         }
 
+        private void UpdateLedsDrivers()
+        {
+            TelemetryLedsProfileCombo.ProfileSettings = null;
+            ButtonLedsProfileCombo.ProfileSettings = null;
+            IndividualLedsProfileCombo.ProfileSettings = null;
+            if (SelectedDevice != null)
+            {
+                foreach (PixelGroups group in Enum.GetValues(typeof(PixelGroups)))
+                {
+                    _rgbLedsDriver[(int)group] =
+                        (SelectedDevice.Capabilities.GetPixelCount(group) > 0) ?
+                            new RGBLedsDriver(
+                                Utils.GetLedsSettingsFile(SelectedDevice.UniqueID, group))
+                        :
+                            null;
+                }
+            }
+            else
+            {
+                _rgbLedsDriver[0] = null;
+                _rgbLedsDriver[1] = null;
+                _rgbLedsDriver[2] = null;
+            }
+            TelemetryLedsProfileCombo.ProfileSettings =
+                _rgbLedsDriver[(int)PixelGroups.TelemetryLeds]?.Settings;
+            ButtonLedsProfileCombo.ProfileSettings =
+                _rgbLedsDriver[(int)PixelGroups.ButtonsLighting]?.Settings;
+            IndividualLedsProfileCombo.ProfileSettings =
+                _rgbLedsDriver[(int)PixelGroups.IndividualLeds]?.Settings;
+        }
+
         //------------------------------------------------------------
         // INotifyPropertyChanged implementation
         //------------------------------------------------------------
@@ -423,6 +544,9 @@ namespace Afpineda.ESP32SimWheelPlugin
         private readonly List<ESP32SimWheel.IDevice> AvailableDevices = new List<ESP32SimWheel.IDevice>();
         public ESP32SimWheelPlugin Plugin { get; }
         private const int POLLING_INTERVAL_MS = 250;
+
+        private readonly RGBLedsDriver[] _rgbLedsDriver = new RGBLedsDriver[3];
+
 
     } // classMainControl
 } //namespace Afpineda.ESP32SimWheelPlugin

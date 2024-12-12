@@ -115,6 +115,7 @@
         <Compile Include="src\ESP32SimWheel\Utils.cs" />
         <Compile Include="src\plugin\ESP32SimWheelPlugin.cs" />
         <Compile Include="src\plugin\CustomSettings.cs" />
+        <Compile Include="src\plugin\Utils.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
         <Compile Include="Properties\Resources.Designer.cs">
             <AutoGen>True</AutoGen>

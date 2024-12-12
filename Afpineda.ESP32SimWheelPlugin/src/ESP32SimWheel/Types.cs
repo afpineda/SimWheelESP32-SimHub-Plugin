@@ -74,6 +74,21 @@ namespace ESP32SimWheel
             }
         }
 
+        public byte GetPixelCount(PixelGroups group)
+        {
+            switch (group)
+            {
+                case PixelGroups.TelemetryLeds:
+                    return TelemetryLedsCount;
+                case PixelGroups.ButtonsLighting:
+                    return ButtonsLightingCount;
+                case PixelGroups.IndividualLeds:
+                    return IndividualLedsCount;
+                default:
+                    return 0;
+            }
+        }
+
         public Capabilities(
             ushort flags,
             byte fps = 0,

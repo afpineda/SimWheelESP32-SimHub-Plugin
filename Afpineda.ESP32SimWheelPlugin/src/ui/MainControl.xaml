@@ -7,7 +7,8 @@
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins"
              mc:Ignorable="d"
              xmlns:ui="clr-namespace:SimHub.Plugins.UI;assembly=SimHub.Plugins"
-             xmlns:converter="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             xmlns:profilesCommon="clr-namespace:SimHub.Plugins.ProfilesCommon;assembly=SimHub.Plugins"
+             Loc.LocNs="SimHub.Plugins.OutputPlugins.Dash.WPFUI.SettingsControlWPF"
              xmlns:iconpacks="clr-namespace:MahApps.Metro.IconPacks;assembly=MahApps.Metro.IconPacks.Material">
     <ScrollViewer x:Name="Root">
         <StackPanel>
@@ -216,7 +217,80 @@
                      *** -->
                 <styles:SHTabItem Header="LEDs"
                                   x:Name="LedsPage">
-                    <StackPanel />
+                    <StackPanel>
+                        <!-- /*/*/ Telemetry Leds */*/*/ -->
+                        <styles:SHSection Title="Telemetry leds"
+                                          x:Name="TelemetryLedsGroup">
+                            <styles:SHLeftRightWrapper MinimumLeftWidth="500"
+                                                       CenterSpace="0">
+                                <styles:SHLeftRightWrapper.RightItem>
+                                    <StackPanel Orientation="Horizontal"
+                                                Margin="0,4,0,4"
+                                                Grid.Column="1"
+                                                VerticalAlignment="Center">
+                                        <styles:SHLinkButton Margin="4,4,16,4"
+                                                             x:Name="TelemetryLedsEditProfile"
+                                                             Content="{SLoc ShakeItSettings_EditProfile, 'Edit profile'}" />
+                                        <styles:SHLinkButton Margin="4"
+                                                             x:Name="TelemetryLedsImportProfile"
+                                                             Content="{SLoc ShakeItSettings_ProfilesManager_ImportProfile, 'Import profile'}" />
+                                        <styles:SHLinkButton Margin="4"
+                                                             x:Name="TelemetryLedsLoadProfile"
+                                                             Content="{SLoc ShakeItSettings_ProfilesManager, 'Profiles manager'}" />
+                                    </StackPanel>
+                                </styles:SHLeftRightWrapper.RightItem>
+                                <profilesCommon:ProfileCombobox x:Name="TelemetryLedsProfileCombo" />
+                            </styles:SHLeftRightWrapper>
+                        </styles:SHSection>
+                        <!-- /*/*/ Button Leds */*/*/ -->
+                        <styles:SHSection Title="Buttons lighting"
+                                          x:Name="ButtonLedsGroup">
+                            <styles:SHLeftRightWrapper MinimumLeftWidth="500"
+                                                       CenterSpace="0">
+                                <styles:SHLeftRightWrapper.RightItem>
+                                    <StackPanel Orientation="Horizontal"
+                                                Margin="0,4,0,4"
+                                                Grid.Column="1"
+                                                VerticalAlignment="Center">
+                                        <styles:SHLinkButton Margin="4,4,16,4"
+                                                             x:Name="ButtonLedsEditProfile"
+                                                             Content="{SLoc ShakeItSettings_EditProfile, 'Edit profile'}" />
+                                        <styles:SHLinkButton Margin="4"
+                                                             x:Name="ButtonLedsImportProfile"
+                                                             Content="{SLoc ShakeItSettings_ProfilesManager_ImportProfile, 'Import profile'}" />
+                                        <styles:SHLinkButton Margin="4"
+                                                             x:Name="ButtonLedsLoadProfile"
+                                                             Content="{SLoc ShakeItSettings_ProfilesManager, 'Profiles manager'}" />
+                                    </StackPanel>
+                                </styles:SHLeftRightWrapper.RightItem>
+                                <profilesCommon:ProfileCombobox x:Name="ButtonLedsProfileCombo" />
+                            </styles:SHLeftRightWrapper>
+                        </styles:SHSection>
+                        <!-- /*/*/ Individual Leds */*/*/ -->
+                        <styles:SHSection Title="Individual leds"
+                                          x:Name="IndividualLedsGroup">
+                            <styles:SHLeftRightWrapper MinimumLeftWidth="500"
+                                                       CenterSpace="0">
+                                <styles:SHLeftRightWrapper.RightItem>
+                                    <StackPanel Orientation="Horizontal"
+                                                Margin="0,4,0,4"
+                                                Grid.Column="1"
+                                                VerticalAlignment="Center">
+                                        <styles:SHLinkButton Margin="4,4,16,4"
+                                                             x:Name="IndividualLedsEditProfile"
+                                                             Content="{SLoc ShakeItSettings_EditProfile, 'Edit profile'}" />
+                                        <styles:SHLinkButton Margin="4"
+                                                             x:Name="IndividualLedsImportProfile"
+                                                             Content="{SLoc ShakeItSettings_ProfilesManager_ImportProfile, 'Import profile'}" />
+                                        <styles:SHLinkButton Margin="4"
+                                                             x:Name="IndividualLedsLoadProfile"
+                                                             Content="{SLoc ShakeItSettings_ProfilesManager, 'Profiles manager'}" />
+                                    </StackPanel>
+                                </styles:SHLeftRightWrapper.RightItem>
+                                <profilesCommon:ProfileCombobox x:Name="IndividualLedsProfileCombo" />
+                            </styles:SHLeftRightWrapper>
+                        </styles:SHSection>
+                    </StackPanel>
                 </styles:SHTabItem>
             </styles:SHTabControl>
         </StackPanel>
