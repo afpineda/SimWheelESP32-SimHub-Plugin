@@ -162,7 +162,7 @@
                 </styles:SHTabItem>
                 <styles:SHTabItem Header="ALT buttons"
                                   x:Name="AltButtonsPage">
-                    <StackPanel>
+                    <StackPanel x:Name="AltButtonsGroup">
                         <TextBlock />
                         <styles:SHExpander IsExpanded="True">
                             <styles:SHExpander.Header>
@@ -179,7 +179,7 @@
                 </styles:SHTabItem>
                 <styles:SHTabItem Header="DPAD"
                                   x:Name="DPadPage">
-                    <StackPanel>
+                    <StackPanel x:Name="DPadGroup">
                         <TextBlock />
                         <styles:SHExpander IsExpanded="True">
                             <styles:SHExpander.Header>

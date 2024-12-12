@@ -84,14 +84,14 @@ namespace Afpineda.ESP32SimWheelPlugin
         }
 
         // --------------------------------------------------------
-        // Automatic update
+        // Automatic UI update from device status
         // --------------------------------------------------------
 
         private void OnTimer(object sender, EventArgs e)
         {
             // if a device is selected, read device state and
             // update UI elements only if there are changes
-            if ((SelectedDevice != null) && SelectedDevice.Refresh())
+            if (SelectedDevice?.Refresh() ?? false)
                 UpdateUIFromDeviceState();
         }
 
@@ -117,7 +117,9 @@ namespace Afpineda.ESP32SimWheelPlugin
 
         private void UpdateUIFromSecurityLockState(ESP32SimWheel.ISecurityLock sLock)
         {
-            ClutchPaddlesGroup.IsEnabled = (sLock == null) || !sLock.IsLocked;
+            ClutchPaddlesGroup.IsEnabled = !sLock?.IsLocked ?? false;
+            AltButtonsGroup.IsEnabled = ClutchPaddlesGroup.IsEnabled;
+            DPadGroup.IsEnabled = ClutchPaddlesGroup.IsEnabled;
             if (ClutchPaddlesGroup.IsEnabled)
                 SecurityLockText.Text = "Disabled";
             else
@@ -174,7 +176,7 @@ namespace Afpineda.ESP32SimWheelPlugin
         // --------------------------------------------------------
 
         // UI updates are disabled when this control is not visible
-        // (should avoid unneeded CPU usage)
+        // (should avoid CPU usage)
         void OnVisibilityChange(object sender, DependencyPropertyChangedEventArgs e)
         {
             bool visible = (bool)e.NewValue;
@@ -239,7 +241,7 @@ namespace Afpineda.ESP32SimWheelPlugin
         private void OnBitePointSliderChanged(object sender, RoutedPropertyChangedEventArgs<double> args)
         {
             args.Handled = true;
-            if ((SelectedDevice == null) || (SelectedDevice.Clutch == null))
+            if (SelectedDevice?.Clutch == null)
                 return;
             if (!_updating)
                 // propagate UI -> device
@@ -293,14 +295,14 @@ namespace Afpineda.ESP32SimWheelPlugin
 
         private void OnClutchWorkingModeChanged(object sender, SelectionChangedEventArgs e)
         {
-            if ((SelectedDevice != null) && (SelectedDevice.Clutch != null) && !_updating)
+            if ((SelectedDevice?.Clutch != null) && !_updating)
                 foreach (ClutchWorkingModes workingMode in Enum.GetValues(typeof(ClutchWorkingModes)))
                 {
                     ListBoxItem item = (ListBoxItem)
                         ClutchWorkingModeListBox.
                             ItemContainerGenerator.
                                 ContainerFromIndex((int)workingMode);
-                    if ((item != null) && item.IsSelected)
+                    if (item?.IsSelected ?? false)
                         try
                         {
                             SelectedDevice.Clutch.ClutchWorkingMode = workingMode;
@@ -325,9 +327,7 @@ namespace Afpineda.ESP32SimWheelPlugin
 
         private void OnAltButtonsWorkingModeChanged(object sender, SelectionChangedEventArgs e)
         {
-            if ((SelectedDevice != null) &&
-                (SelectedDevice.AltButtons != null) &&
-                !_updating)
+            if ((SelectedDevice?.AltButtons != null) && !_updating)
                 try
                 {
                     if (AltButtonsButtonMode.IsSelected)
@@ -345,9 +345,7 @@ namespace Afpineda.ESP32SimWheelPlugin
 
         private void OnDPadWorkingModeChanged(object sender, SelectionChangedEventArgs e)
         {
-            if ((SelectedDevice != null) &&
-                (SelectedDevice.DPad != null) &&
-                !_updating)
+            if ((SelectedDevice?.DPad != null) && !_updating)
                 try
                 {
                     if (DPadButtonMode.IsSelected)
@@ -392,6 +390,17 @@ namespace Afpineda.ESP32SimWheelPlugin
                     MainPages.Items.Remove(tabPage);
             }
         }
+
+        //------------------------------------------------------------
+        // INotifyPropertyChanged implementation
+        //------------------------------------------------------------
+
+        // public event PropertyChangedEventHandler PropertyChanged;
+
+        // private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
+        // {
+        //     PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        // }
 
         // --------------------------------------------------------
         // Private Fields and properties
