@@ -11,6 +11,9 @@
              xmlns:iconpacks="clr-namespace:MahApps.Metro.IconPacks;assembly=MahApps.Metro.IconPacks.Material">
     <ScrollViewer x:Name="Root">
         <StackPanel>
+            <!-- ///
+                 /// TOP Area
+                 /// -->
             <styles:SHLeftRightWrapper MinimumLeftWidth="400"
                                        CenterSpace="0">
                 <styles:SHLeftRightWrapper.RightItem>
@@ -74,7 +77,13 @@
                     </DataTemplate>
                 </ComboBox.ItemTemplate>
             </ComboBox>
+            <!-- ///
+                 /// Pages for SELECTED DEVICE
+                 /// -->
             <styles:SHTabControl x:Name="MainPages">
+                <!-- ***
+                     *** INFO tab
+                     *** -->
                 <styles:SHTabItem Header="Info"
                                   Background="red"
                                   x:Name="InfoPage">
@@ -125,6 +134,9 @@
                         </StackPanel>
                     </Grid>
                 </styles:SHTabItem>
+                <!-- ***
+                     *** CLUTCH tab
+                     *** -->
                 <styles:SHTabItem Header="Clutch paddles"
                                   x:Name="ClutchPage">
                     <StackPanel>
@@ -159,6 +171,9 @@
                         </StackPanel>
                     </StackPanel>
                 </styles:SHTabItem>
+                <!-- ***
+                     *** ALT BUTTONS tab
+                     *** -->
                 <styles:SHTabItem Header="ALT buttons"
                                   x:Name="AltButtonsPage">
                     <StackPanel x:Name="AltButtonsGroup">
@@ -176,6 +191,9 @@
                         </styles:SHExpander>
                     </StackPanel>
                 </styles:SHTabItem>
+                <!-- ***
+                     *** DPAD tab
+                     *** -->
                 <styles:SHTabItem Header="DPAD"
                                   x:Name="DPadPage">
                     <StackPanel x:Name="DPadGroup">
@@ -193,10 +211,13 @@
                         </styles:SHExpander>
                     </StackPanel>
                 </styles:SHTabItem>
-                <!-- <styles:SHTabItem Header="LEDs"
+                <!-- ***
+                     *** LEDs tab
+                     *** -->
+                <styles:SHTabItem Header="LEDs"
                                   x:Name="LedsPage">
                     <StackPanel />
-                </styles:SHTabItem> -->
+                </styles:SHTabItem>
             </styles:SHTabControl>
         </StackPanel>
     </ScrollViewer>

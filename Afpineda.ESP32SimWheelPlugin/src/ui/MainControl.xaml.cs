@@ -216,6 +216,7 @@ namespace Afpineda.ESP32SimWheelPlugin
                     TabVisible(ClutchPage, SelectedDevice.Capabilities.HasClutch);
                     TabVisible(AltButtonsPage, SelectedDevice.Capabilities.HasAltButtons);
                     TabVisible(DPadPage, SelectedDevice.Capabilities.HasDPad);
+                    TabVisible(LedsPage, SelectedDevice.Capabilities.HasPixelControl);
                     MainPages.SelectedIndex = 0;
 
                     // Read device state and update dynamic UI elements
@@ -235,6 +236,7 @@ namespace Afpineda.ESP32SimWheelPlugin
                 TabVisible(ClutchPage, false);
                 TabVisible(AltButtonsPage, false);
                 TabVisible(DPadPage, false);
+                TabVisible(LedsPage, false);
             }
         }
 
@@ -379,9 +381,13 @@ namespace Afpineda.ESP32SimWheelPlugin
                         idx = 2;
                     else if (tabPage == DPadPage)
                         idx = 3;
-                    // else if (tabPage == LedsPage)
-                    //     idx = 4;
-                    MainPages.Items.Insert(idx, tabPage);
+                    else if (tabPage == LedsPage)
+                        idx = 4;
+
+                    if (idx >= MainPages.Items.Count)
+                        MainPages.Items.Add(tabPage);
+                    else
+                        MainPages.Items.Insert(idx, tabPage);
                 }
             }
             else
