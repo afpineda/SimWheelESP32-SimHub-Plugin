@@ -103,6 +103,9 @@ namespace ESP32SimWheel
                 ThrowIOException();
                 return false;
             }
+
+            public IPixelControl Pixels => null;
+
             // --------------------------------------------------------
             // IDPAD implementation
             // --------------------------------------------------------

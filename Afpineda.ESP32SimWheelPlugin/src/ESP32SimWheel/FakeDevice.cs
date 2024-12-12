@@ -7,6 +7,8 @@
  *****************************************************************************/
 #endregion License
 
+using System.Text;
+using System.Drawing;
 using SimHub.Plugins;
 using GameReaderCommon;
 
@@ -20,7 +22,8 @@ namespace ESP32SimWheel
         ESP32SimWheel.ISecurityLock,
         ESP32SimWheel.IBattery,
         ESP32SimWheel.IDpad,
-        ESP32SimWheel.IAltButtons
+        ESP32SimWheel.IAltButtons,
+        ESP32SimWheel.IPixelControl
     {
         // --------------------------------------------------------
         // Device simulation
@@ -83,6 +86,8 @@ namespace ESP32SimWheel
         }
         public IDpad DPad { get { if (_capabilities.HasDPad) return this; else return null; } }
         public IAltButtons AltButtons { get { if (_capabilities.HasAltButtons) return this; else return null; } }
+
+        public IPixelControl Pixels => _capabilities.HasPixelControl ? this : null;
 
         public ulong UniqueID { get; set; }
 
@@ -249,6 +254,28 @@ namespace ESP32SimWheel
         private byte _bitePoint = 0;
 
         // --------------------------------------------------------
+        // IPixelControl implementation
+        // --------------------------------------------------------
+
+        public void SetPixels(PixelGroups group, Color[] pixelData)
+        {
+            var auxStr = new StringBuilder();
+            foreach (var pixel in pixelData)
+                auxStr.Append((pixel.ToArgb() != 0) ? "o": ".");
+
+            SimHub.Logging.Current.InfoFormat(
+                "[FakeDeviceESP32] [{0}] setPixels(): {1}",
+                _hidInfo.DisplayName,
+                auxStr.ToString());
+        }
+
+        public void ShowPixelsNow()
+        {
+            SimHub.Logging.Current.InfoFormat("[FakeDeviceESP32] [{0}] ShowPixelsNow()",
+                _hidInfo.DisplayName);
+        }
+
+        // --------------------------------------------------------
         // Private fields
         // --------------------------------------------------------
 
@@ -272,10 +299,9 @@ namespace ESP32SimWheel
         public ISecurityLock SecurityLock { get { return _device; } }
         public IBattery Battery { get { return _device.Battery; } }
         public ITelemetryData TelemetryData { get { return _device.TelemetryData; } }
-
         public IDpad DPad { get { return _device.DPad; } }
         public IAltButtons AltButtons { get { return _device.AltButtons; } }
-
+        public IPixelControl Pixels => _device.Pixels;
         public ulong UniqueID { get { return _device.UniqueID; } set { _device.UniqueID = value; } }
 
         public bool Refresh()
@@ -301,6 +327,5 @@ namespace ESP32SimWheel
         private readonly FakeDevice _device;
         private bool _updated = false;
     } // class FakeDeviceWrapper
-
 
 } // namespace ESP32SimWheel

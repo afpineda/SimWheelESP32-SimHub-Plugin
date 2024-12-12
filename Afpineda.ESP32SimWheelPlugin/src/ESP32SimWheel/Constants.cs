@@ -42,7 +42,7 @@ namespace ESP32SimWheel
             internal const short REPORT23_SIZE_V1_3 = 12 + 1;
 
             // version
-            internal const ushort SUPPORTED_MINOR_VERSION = 3;
+            internal const ushort SUPPORTED_MINOR_VERSION = 4;
         } // class Constants
     } // namespace V1
 } // namespace ESP32SimWheel

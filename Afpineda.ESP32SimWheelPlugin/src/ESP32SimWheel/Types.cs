@@ -7,6 +7,7 @@
  *****************************************************************************/
 #endregion License
 
+using System.Drawing;
 using GameReaderCommon;
 
 namespace ESP32SimWheel
@@ -31,6 +32,13 @@ namespace ESP32SimWheel
         Navigation
     }
 
+    public enum PixelGroups : byte
+    {
+        TelemetryLeds = 0,
+        ButtonsLighting,
+        IndividualLeds
+    }
+
     public struct Capabilities
     {
         public byte FramesPerSecond { get; }
@@ -52,8 +60,26 @@ namespace ESP32SimWheel
                        UsesRaceControlTelemetry || UsesGaugesTelemetry;
             }
         }
+        public byte TelemetryLedsCount { get; }
+        public byte ButtonsLightingCount { get; }
+        public byte IndividualLedsCount { get; }
 
-        public Capabilities(ushort flags, byte fps)
+        public bool HasPixelControl
+        {
+            get
+            {
+                return (TelemetryLedsCount > 0) ||
+                       (ButtonsLightingCount > 0) ||
+                       (IndividualLedsCount > 0);
+            }
+        }
+
+        public Capabilities(
+            ushort flags,
+            byte fps = 0,
+            byte telemetryLedsCount = 0,
+            byte buttonsLightingCount = 0,
+            byte individualLedsCount = 0)
         {
             HasAnalogClutch = (flags & 0x0002) != 0;
             HasClutch = HasAnalogClutch || ((flags & 0x0001) != 0);
@@ -66,6 +92,9 @@ namespace ESP32SimWheel
             UsesRaceControlTelemetry = (fps > 0) && (flags & 0x0100) != 0;
             UsesGaugesTelemetry = (fps > 0) && (flags & 0x0200) != 0;
             FramesPerSecond = fps;
+            TelemetryLedsCount = telemetryLedsCount;
+            ButtonsLightingCount = buttonsLightingCount;
+            IndividualLedsCount = individualLedsCount;
         }
     }
 
@@ -128,6 +157,12 @@ namespace ESP32SimWheel
         byte BatteryLevel { get; }
     }
 
+    public interface IPixelControl
+    {
+        void SetPixels(PixelGroups group, Color[] pixelData);
+        void ShowPixelsNow();
+    }
+
     public interface IDevice
     {
         Capabilities Capabilities { get; }
@@ -140,6 +175,7 @@ namespace ESP32SimWheel
         ITelemetryData TelemetryData { get; }
         IDpad DPad { get; }
         IAltButtons AltButtons { get; }
+        IPixelControl Pixels { get; }
         ulong UniqueID { get; }
         bool Refresh();
     }
