@@ -217,6 +217,13 @@ namespace Afpineda.ESP32SimWheelPlugin
             SimHub.Logging.Current.Info("[ESP32 Sim-wheel] Save requested");
         }
 
+        public void ReloadRGBLedDrivers(ulong deviceID)
+        {
+            SimHub.Logging.Current.InfoFormat(
+                "[ESP32 Sim-wheel] Request to reload RGB Leds drivers for device {0:X16}",
+                deviceID);
+        }
+
         private void OnBindToGameAndCar(bool state)
         {
             if (state)

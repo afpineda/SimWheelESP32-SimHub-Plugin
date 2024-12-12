@@ -13,5 +13,8 @@
         "iconpacks",
         "msbuild",
         "simhub"
+    ],
+    "cSpell.words": [
+        "Backlights"
     ]
 }

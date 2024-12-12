@@ -16,6 +16,8 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Controls;
 using System.Windows.Threading;
+using SHDialogResult = System.Windows.Forms.DialogResult;
+
 using SimHub.Plugins.Styles;
 using SimHub.Plugins.DataPlugins.RGBDriver;
 using SimHub.Plugins.DataPlugins.RGBDriver.Settings;
@@ -101,6 +103,9 @@ namespace Afpineda.ESP32SimWheelPlugin
             IndividualLedsImportProfile.Click += LedsImportProfile_Click;
             IndividualLedsLoadProfile.Click += LedsLoadProfile_Click;
 
+            // LEDs driver: Save / Undo
+            SaveLedProfilesButton.Click += SaveLedProfilesButton_Click;
+            UndoLedProfilesButton.Click += UndoLedProfilesButton_Click;
         }
 
         // --------------------------------------------------------
@@ -233,6 +238,9 @@ namespace Afpineda.ESP32SimWheelPlugin
                         TelemetryDataText.Text = string.Format("Yes ({0} frames per second)", SelectedDevice.Capabilities.FramesPerSecond);
                     else
                         TelemetryDataText.Text = "No";
+                    TelemetryLedsCount.Text = SelectedDevice.Capabilities.TelemetryLedsCount.ToString();
+                    ButtonsLightingCount.Text = SelectedDevice.Capabilities.ButtonsLightingCount.ToString();
+                    IndividualLedsCount.Text = SelectedDevice.Capabilities.IndividualLedsCount.ToString();
 
                     TelemetryLedsGroup.IsEnabled = (SelectedDevice.Capabilities.TelemetryLedsCount > 0);
                     ButtonLedsGroup.IsEnabled = (SelectedDevice.Capabilities.ButtonsLightingCount > 0);
@@ -451,6 +459,26 @@ namespace Afpineda.ESP32SimWheelPlugin
                 new ProfilesManager<Profile, LedsSettings>(
                 (IProfileSettings<Profile>)driver.Settings).
                     ShowDialogWindow((DependencyObject)this);
+        }
+
+        private void SaveLedProfilesButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            foreach (PixelGroups group in Enum.GetValues(typeof(PixelGroups)))
+                _rgbLedsDriver[(int)group]?.SaveSettings();
+            if (SelectedDevice != null)
+                Plugin.ReloadRGBLedDrivers(SelectedDevice.UniqueID);
+        }
+
+        private async void UndoLedProfilesButton_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+
+            var res = await SHMessageBox.Show(
+                "Are you sure?",
+                "Undo",
+                System.Windows.MessageBoxButton.OKCancel,
+                System.Windows.MessageBoxImage.Question);
+            if (res == SHDialogResult.OK)
+                UpdateLedsDrivers();
         }
 
         // --------------------------------------------------------

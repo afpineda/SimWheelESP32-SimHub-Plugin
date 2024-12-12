@@ -112,6 +112,35 @@
                                     X.Y
                                 </TextBlock>
                             </styles:SHTitledGroup>
+                            <styles:SHTitledGroup Margin="0,10,10,10"
+                                                  Title="RGB pixel count">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Margin="0,0,10,0">
+                                            Telemetry leds:
+                                        </TextBlock>
+                                        <TextBlock x:Name="TelemetryLedsCount">
+                                            0
+                                        </TextBlock>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Margin="0,0,10,0">
+                                            Backlights:
+                                        </TextBlock>
+                                        <TextBlock x:Name="ButtonsLightingCount">
+                                            0
+                                        </TextBlock>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Margin="0,0,10,0">
+                                            Individual leds:
+                                        </TextBlock>
+                                        <TextBlock x:Name="IndividualLedsCount">
+                                            0
+                                        </TextBlock>
+                                    </StackPanel>
+                                </StackPanel>
+                            </styles:SHTitledGroup>
                         </StackPanel>
                         <StackPanel Grid.Column="1">
                             <styles:SHTitledGroup Margin="0,10,10,10"
@@ -290,6 +319,37 @@
                                 <profilesCommon:ProfileCombobox x:Name="IndividualLedsProfileCombo" />
                             </styles:SHLeftRightWrapper>
                         </styles:SHSection>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+                            <!-- /*/*/ Save/UndoButtons  */*/*/ -->
+                            <styles:SHButtonPrimary x:Name="SaveLedProfilesButton"
+                                                    Grid.Column="0">
+                                <StackPanel Orientation="Horizontal">
+                                    <iconpacks:PackIconMaterial Kind="ContentSave"
+                                                                Height="20"
+                                                                Width="20" />
+                                    <TextBlock VerticalAlignment="Center"
+                                               Margin="15,0,0,0">
+                                        Apply and save
+                                    </TextBlock>
+                                </StackPanel>
+                            </styles:SHButtonPrimary>
+                            <styles:SHButtonPrimary x:Name="UndoLedProfilesButton"
+                                                    Grid.Column="1">
+                                <StackPanel Orientation="Horizontal">
+                                    <iconpacks:PackIconMaterial Kind="Undo"
+                                                                Height="20"
+                                                                Width="20" />
+                                    <TextBlock VerticalAlignment="Center"
+                                               Margin="15,0,0,0">
+                                        Undo
+                                    </TextBlock>
+                                </StackPanel>
+                            </styles:SHButtonPrimary>
+                        </Grid>
                     </StackPanel>
                 </styles:SHTabItem>
             </styles:SHTabControl>
