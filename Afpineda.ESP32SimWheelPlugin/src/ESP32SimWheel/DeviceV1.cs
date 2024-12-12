@@ -39,53 +39,16 @@ namespace ESP32SimWheel
             // IDevice implementation
             // --------------------------------------------------------
 
-            public Capabilities Capabilities { get { return _capabilities; } }
-            public HidInfo HidInfo { get { return _hidInfo; } }
-            public DataVersion DataVersion { get { return _dataVersion; } }
-            public IClutch Clutch
-            {
-                get
-                {
-                    if (_capabilities.HasClutch)
-                        return this;
-                    else
-                        return null;
-                }
-            }
-            public IAnalogClutch AnalogClutch { get { return null; } }
-            public ISecurityLock SecurityLock { get { return this; } }
-
-            public IBattery Battery
-            {
-                get
-                {
-                    if (_capabilities.HasBattery)
-                        return this;
-                    else
-                        return null;
-                }
-            }
-
-            public IDpad DPad
-            {
-                get
-                {
-                    if (_capabilities.HasDPad)
-                        return this;
-                    else return null;
-                }
-            }
-
-            public IAltButtons AltButtons
-            {
-                get
-                {
-                    if (_capabilities.HasAltButtons)
-                        return this;
-                    else return null;
-                }
-            }
-
+            public Capabilities Capabilities => _capabilities;
+            public HidInfo HidInfo => _hidInfo;
+            public DataVersion DataVersion => _dataVersion;
+            public IClutch Clutch => (_capabilities.HasClutch) ? this : null;
+            public IAnalogClutch AnalogClutch => null;
+            public ISecurityLock SecurityLock => this;
+            public IBattery Battery => (_capabilities.HasBattery) ? this : null;
+            public IDpad DPad => (_capabilities.HasDPad) ? this : null;
+            public IAltButtons AltButtons => (_capabilities.HasAltButtons) ? this : null;
+            public IPixelControl Pixels => null;
             public ulong UniqueID { get; private set; }
 
             public bool Refresh()
@@ -103,8 +66,6 @@ namespace ESP32SimWheel
                 ThrowIOException();
                 return false;
             }
-
-            public IPixelControl Pixels => null;
 
             // --------------------------------------------------------
             // IDPAD implementation

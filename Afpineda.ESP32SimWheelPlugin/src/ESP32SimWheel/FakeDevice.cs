@@ -71,22 +71,12 @@ namespace ESP32SimWheel
         public Capabilities Capabilities { get { return _capabilities; } set { _capabilities = value; } }
         public HidInfo HidInfo { get { return _hidInfo; } set { _hidInfo = value; } }
         public DataVersion DataVersion { get { return _dataVersion; } set { _dataVersion = value; } }
-        public IClutch Clutch { get { if (_capabilities.HasClutch) return this; else return null; } }
-        public ISecurityLock SecurityLock { get { return this; } }
-        public IBattery Battery { get { if (_capabilities.HasBattery) return this; else return null; } }
-        public ITelemetryData TelemetryData
-        {
-            get
-            {
-                if (Capabilities.UsesTelemetryData)
-                    return this;
-                else
-                    return null;
-            }
-        }
-        public IDpad DPad { get { if (_capabilities.HasDPad) return this; else return null; } }
-        public IAltButtons AltButtons { get { if (_capabilities.HasAltButtons) return this; else return null; } }
-
+        public IClutch Clutch => (_capabilities.HasClutch) ? this : null;
+        public ISecurityLock SecurityLock => this;
+        public IBattery Battery => _capabilities.HasBattery ? this : null;
+        public ITelemetryData TelemetryData => _capabilities.UsesTelemetryData ? this : null;
+        public IDpad DPad => _capabilities.HasDPad ? this : null;
+        public IAltButtons AltButtons => _capabilities.HasAltButtons ? this : null;
         public IPixelControl Pixels => _capabilities.HasPixelControl ? this : null;
 
         public ulong UniqueID { get; set; }
@@ -261,7 +251,7 @@ namespace ESP32SimWheel
         {
             var auxStr = new StringBuilder();
             foreach (var pixel in pixelData)
-                auxStr.Append((pixel.ToArgb() != 0) ? "o": ".");
+                auxStr.Append((pixel.ToArgb() != 0) ? "o" : ".");
 
             SimHub.Logging.Current.InfoFormat(
                 "[FakeDeviceESP32] [{0}] setPixels(): {1}",
@@ -291,16 +281,16 @@ namespace ESP32SimWheel
         // IDevice implementation
         // --------------------------------------------------------
 
-        public Capabilities Capabilities { get { return _device.Capabilities; } }
-        public HidInfo HidInfo { get { return _device.HidInfo; } }
-        public DataVersion DataVersion { get { return _device.DataVersion; } }
-        public IClutch Clutch { get { return _device.Clutch; } }
-        public IAnalogClutch AnalogClutch { get { return null; } }
-        public ISecurityLock SecurityLock { get { return _device; } }
-        public IBattery Battery { get { return _device.Battery; } }
-        public ITelemetryData TelemetryData { get { return _device.TelemetryData; } }
-        public IDpad DPad { get { return _device.DPad; } }
-        public IAltButtons AltButtons { get { return _device.AltButtons; } }
+        public Capabilities Capabilities => _device.Capabilities;
+        public HidInfo HidInfo => _device.HidInfo;
+        public DataVersion DataVersion => _device.DataVersion;
+        public IClutch Clutch => _device.Clutch;
+        public IAnalogClutch AnalogClutch => null;
+        public ISecurityLock SecurityLock => _device;
+        public IBattery Battery => _device.Battery;
+        public ITelemetryData TelemetryData => _device.TelemetryData;
+        public IDpad DPad => _device.DPad;
+        public IAltButtons AltButtons => _device.AltButtons;
         public IPixelControl Pixels => _device.Pixels;
         public ulong UniqueID { get { return _device.UniqueID; } set { _device.UniqueID = value; } }
 

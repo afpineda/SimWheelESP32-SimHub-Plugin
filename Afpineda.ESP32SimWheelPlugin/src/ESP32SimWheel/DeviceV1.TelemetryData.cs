@@ -19,22 +19,13 @@ namespace ESP32SimWheel
     {
         public partial class Device : ESP32SimWheel.ITelemetryData
         {
-            public ITelemetryData TelemetryData
-            {
-                get
-                {
-                    if (_millisecondsPerFrame > 0)
-                        return this;
-                    else
-                        return null;
-                }
-            }
+            public ITelemetryData TelemetryData => (_millisecondsPerFrame > 0) ? this : null;
 
             // --------------------------------------------------------
             // ITelemetryData implementation
             // --------------------------------------------------------
 
-            public long MillisecondsPerTelemetryFrame { get { return _millisecondsPerFrame; } }
+            public long MillisecondsPerTelemetryFrame => _millisecondsPerFrame;
 
             public bool SendTelemetry(ref GameData data)
             {
