@@ -249,20 +249,26 @@ namespace ESP32SimWheel
 
         public void SetPixels(PixelGroups group, Color[] pixelData)
         {
-            var auxStr = new StringBuilder();
-            foreach (var pixel in pixelData)
-                auxStr.Append((pixel.ToArgb() != 0) ? "o" : ".");
-
-            SimHub.Logging.Current.InfoFormat(
-                "[FakeDeviceESP32] [{0}] setPixels(): {1}",
-                _hidInfo.DisplayName,
-                auxStr.ToString());
+            if ((pixelData != null) && (pixelData.Length > 0))
+            {
+                var auxStr = new StringBuilder();
+                foreach (var pixel in pixelData)
+                {
+                    //auxStr.Append(string.Format("{0:X} ", pixel.ToArgb()));
+                    auxStr.Append(((pixel.ToArgb() & 0x00FFFFFF) != 0) ? "o" : ".");
+                }
+                SimHub.Logging.Current.InfoFormat(
+                    "[FakeDeviceESP32] [{0}] setPixels({1}): {2}",
+                    _hidInfo.DisplayName,
+                    group,
+                    auxStr.ToString());
+            }
         }
 
         public void ShowPixelsNow()
         {
-            SimHub.Logging.Current.InfoFormat("[FakeDeviceESP32] [{0}] ShowPixelsNow()",
-                _hidInfo.DisplayName);
+            // SimHub.Logging.Current.InfoFormat("[FakeDeviceESP32] [{0}] ShowPixelsNow()",
+            //     _hidInfo.DisplayName);
         }
 
         // --------------------------------------------------------

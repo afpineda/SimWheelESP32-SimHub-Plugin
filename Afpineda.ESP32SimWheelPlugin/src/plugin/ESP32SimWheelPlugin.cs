@@ -7,13 +7,17 @@
  *****************************************************************************/
 #endregion License
 
-using GameReaderCommon;
-using SimHub.Plugins;
 using System;
 using System.Linq;
 using System.Windows.Media;
 using System.Collections;
 using System.Collections.Generic;
+
+using SimHub.Plugins;
+using SimHub.Plugins.DataPlugins.RGBDriver;
+using SimHub.Plugins.DataPlugins.RGBDriver.Settings;
+using GameReaderCommon;
+
 using ESP32SimWheel;
 
 namespace Afpineda.ESP32SimWheelPlugin
@@ -43,6 +47,21 @@ namespace Afpineda.ESP32SimWheelPlugin
         /// Gets a short plugin title to show in left menu. Return null if you want to use the title as defined in PluginName attribute.
         /// </summary>
         public string LeftMenuTitle => "ESP32 Sim-wheel";
+
+        /// <summary>
+        /// Returns the settings control, return null if no settings control is required
+        /// </summary>
+        /// <param name="pluginManager"></param>
+        /// <returns></returns>
+        public System.Windows.Controls.Control GetWPFSettingsControl(PluginManager pluginManager)
+        {
+            _mainControl = new MainControl(this);
+            return _mainControl;
+        }
+
+        // --------------------------------------------------------
+        // Main LOOP
+        // --------------------------------------------------------
 
         /// <summary>
         /// Called one time per game data update, contains all normalized game data,
@@ -104,6 +123,7 @@ namespace Afpineda.ESP32SimWheelPlugin
 
         private void SendTelemetryData(ref GameData data)
         {
+            System.Drawing.Color[] pixels = null;
             if ((data.GameRunning) && (data.NewData != null))
             {
                 foreach (var device in _devices)
@@ -111,6 +131,29 @@ namespace Afpineda.ESP32SimWheelPlugin
                     if ((device.TelemetryData != null) &&
                         !device.TelemetryData.SendTelemetry(ref data))
                         _refreshDeviceList = true;
+
+                    if (device.Pixels != null)
+                    {
+                        pixels = LocateRGBLedsDriver(
+                            device.UniqueID,
+                            PixelGroups.TelemetryLeds)
+                            ?.GetResult();
+                        device.Pixels.SetPixels(PixelGroups.TelemetryLeds, pixels);
+
+                        pixels = LocateRGBLedsDriver(
+                            device.UniqueID,
+                            PixelGroups.ButtonsLighting)
+                            ?.GetResult();
+                        device.Pixels.SetPixels(PixelGroups.ButtonsLighting, pixels);
+
+                        pixels = LocateRGBLedsDriver(
+                            device.UniqueID,
+                            PixelGroups.IndividualLeds)
+                            ?.GetResult();
+                        device.Pixels.SetPixels(PixelGroups.IndividualLeds, pixels);
+
+                        device.Pixels.ShowPixelsNow();
+                    }
                 }
             }
         }
@@ -152,16 +195,9 @@ namespace Afpineda.ESP32SimWheelPlugin
             }
         }
 
-        /// <summary>
-        /// Returns the settings control, return null if no settings control is required
-        /// </summary>
-        /// <param name="pluginManager"></param>
-        /// <returns></returns>
-        public System.Windows.Controls.Control GetWPFSettingsControl(PluginManager pluginManager)
-        {
-            _mainControl = new MainControl(this);
-            return _mainControl;
-        }
+        // --------------------------------------------------------
+        // Plugin initialization and finalization
+        // --------------------------------------------------------
 
         /// <summary>
         /// Called once after plugins startup
@@ -170,6 +206,11 @@ namespace Afpineda.ESP32SimWheelPlugin
         /// <param name="pluginManager"></param>
         public void Init(PluginManager pluginManager)
         {
+            // Initialize fields
+            _ledDrivers[(int)PixelGroups.TelemetryLeds] = new Dictionary<ulong, RGBLedsDriver>();
+            _ledDrivers[(int)PixelGroups.ButtonsLighting] = new Dictionary<ulong, RGBLedsDriver>();
+            _ledDrivers[(int)PixelGroups.IndividualLeds] = new Dictionary<ulong, RGBLedsDriver>();
+
             // Load settings
             Settings = this.ReadCommonSettings<CustomSettings>(
                 "GeneralSettings",
@@ -184,7 +225,6 @@ namespace Afpineda.ESP32SimWheelPlugin
                     gameCarSettings.DeviceID,
                     gameCarSettings.Game,
                     gameCarSettings.Car);
-
 
             // Configure events
             Settings.OnBindToGameAndCar += OnBindToGameAndCar;
@@ -205,6 +245,11 @@ namespace Afpineda.ESP32SimWheelPlugin
             this.SaveCommonSettings<CustomSettings>("GeneralSettings", Settings);
         }
 
+        // --------------------------------------------------------
+        // Public methods
+        // (called from the user interface control)
+        // --------------------------------------------------------
+
         public void Refresh()
         {
             _refreshDeviceList = true;
@@ -222,7 +267,17 @@ namespace Afpineda.ESP32SimWheelPlugin
             SimHub.Logging.Current.InfoFormat(
                 "[ESP32 Sim-wheel] Request to reload RGB Leds drivers for device {0:X16}",
                 deviceID);
+            lock (_reloadLedsDriversLock)
+            {
+                _ledDrivers[(int)PixelGroups.TelemetryLeds].Remove(deviceID);
+                _ledDrivers[(int)PixelGroups.ButtonsLighting].Remove(deviceID);
+                _ledDrivers[(int)PixelGroups.IndividualLeds].Remove(deviceID);
+            }
         }
+
+        // --------------------------------------------------------
+        // Auxiliary methods
+        // --------------------------------------------------------
 
         private void OnBindToGameAndCar(bool state)
         {
@@ -265,6 +320,33 @@ namespace Afpineda.ESP32SimWheelPlugin
             this.SaveCommonSettings<CustomSettings>("GeneralSettings", Settings);
         }
 
+        private RGBLedsDriver LocateRGBLedsDriver(
+            ulong deviceID,
+            PixelGroups group)
+        {
+
+            Dictionary<ulong, RGBLedsDriver> dict = _ledDrivers[(int)group];
+            RGBLedsDriver driver = null;
+            lock (_reloadLedsDriversLock)
+            {
+                if (!dict.TryGetValue(deviceID, out driver) || (driver == null))
+                {
+                    driver = new RGBLedsDriver(
+                        Utils.GetLedsSettingsFile(deviceID, group));
+                    dict.Add(deviceID, driver);
+                    SimHub.Logging.Current.InfoFormat(
+                        "[ESP32 Sim-wheel] RGB Leds driver loaded for device {0:X16} and group {1}",
+                            deviceID,
+                            group);
+                }
+            }
+            return driver;
+        }
+
+        // --------------------------------------------------------
+        // Private Fields and properties
+        // --------------------------------------------------------
+
         private bool _refreshDeviceList = true;
 
         private ESP32SimWheel.IDevice[] _devices = new ESP32SimWheel.IDevice[0];
@@ -272,6 +354,11 @@ namespace Afpineda.ESP32SimWheelPlugin
         private bool _gamePaused = false;
         private bool _bindingsEnabledEvent = false;
         private bool _saveRequest = false;
+        private readonly Dictionary<ulong, RGBLedsDriver>[] _ledDrivers = new Dictionary<ulong, RGBLedsDriver>[3];
+        // private Dictionary<ulong, RGBLedsDriver> _telemetryLedDrivers = new Dictionary<ulong, RGBLedsDriver>();
+        // private Dictionary<ulong, RGBLedsDriver> _backlightsDrivers = new Dictionary<ulong, RGBLedsDriver>();
+        // private Dictionary<ulong, RGBLedsDriver> _individualLedsDrivers = new Dictionary<ulong, RGBLedsDriver>();
         private const int DEVICE_MONITOR_INTERVAL_MS = 1000;
+        private readonly object _reloadLedsDriversLock = new object();
     }
 }
