@@ -242,6 +242,7 @@ namespace Afpineda.ESP32SimWheelPlugin
         public void End(PluginManager pluginManager)
         {
             SimHub.Logging.Current.Info("[ESP32 Sim-wheel] End");
+            ResetAllPixels();
             this.SaveCommonSettings<CustomSettings>("GeneralSettings", Settings);
         }
 
@@ -343,6 +344,19 @@ namespace Afpineda.ESP32SimWheelPlugin
             return driver;
         }
 
+        private void ResetAllPixels()
+        {
+            foreach (var device in _devices)
+                try
+                {
+                    device.Pixels?.ResetPixels();
+                }
+                catch
+                {
+                    // Do nothing since we are quitting
+                }
+        }
+
         // --------------------------------------------------------
         // Private Fields and properties
         // --------------------------------------------------------
@@ -355,9 +369,6 @@ namespace Afpineda.ESP32SimWheelPlugin
         private bool _bindingsEnabledEvent = false;
         private bool _saveRequest = false;
         private readonly Dictionary<ulong, RGBLedsDriver>[] _ledDrivers = new Dictionary<ulong, RGBLedsDriver>[3];
-        // private Dictionary<ulong, RGBLedsDriver> _telemetryLedDrivers = new Dictionary<ulong, RGBLedsDriver>();
-        // private Dictionary<ulong, RGBLedsDriver> _backlightsDrivers = new Dictionary<ulong, RGBLedsDriver>();
-        // private Dictionary<ulong, RGBLedsDriver> _individualLedsDrivers = new Dictionary<ulong, RGBLedsDriver>();
         private const int DEVICE_MONITOR_INTERVAL_MS = 1000;
         private readonly object _reloadLedsDriversLock = new object();
     }

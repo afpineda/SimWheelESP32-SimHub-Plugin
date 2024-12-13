@@ -176,6 +176,7 @@ namespace ESP32SimWheel
     {
         void SetPixels(PixelGroups group, Color[] pixelData);
         void ShowPixelsNow();
+        void ResetPixels();
     }
 
     public interface IDevice

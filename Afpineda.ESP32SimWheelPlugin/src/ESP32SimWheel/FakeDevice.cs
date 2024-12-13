@@ -271,6 +271,11 @@ namespace ESP32SimWheel
             //     _hidInfo.DisplayName);
         }
 
+        public void ResetPixels()
+        {
+            // Do nothing
+        }
+
         // --------------------------------------------------------
         // Private fields
         // --------------------------------------------------------

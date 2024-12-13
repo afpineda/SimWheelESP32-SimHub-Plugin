@@ -11,6 +11,7 @@ using System;
 using System.Text;
 using System.Linq;
 using System.IO;
+using System.Drawing;
 using HidLibrary;
 using SimHub;
 
@@ -24,7 +25,8 @@ namespace ESP32SimWheel
             ESP32SimWheel.ISecurityLock,
             ESP32SimWheel.IBattery,
             ESP32SimWheel.IDpad,
-            ESP32SimWheel.IAltButtons
+            ESP32SimWheel.IAltButtons,
+            ESP32SimWheel.IPixelControl
         {
             // --------------------------------------------------------
             // String representation
@@ -48,7 +50,7 @@ namespace ESP32SimWheel
             public IBattery Battery => (_capabilities.HasBattery) ? this : null;
             public IDpad DPad => (_capabilities.HasDPad) ? this : null;
             public IAltButtons AltButtons => (_capabilities.HasAltButtons) ? this : null;
-            public IPixelControl Pixels => null;
+            public IPixelControl Pixels => _capabilities.HasPixelControl ? this : null;
             public ulong UniqueID { get; private set; }
 
             public bool Refresh()
@@ -83,7 +85,7 @@ namespace ESP32SimWheel
                 {
                     if (_report3.Length > 5)
                     {
-                        byte[] newReport3 = NewReport3();
+                        byte[] newReport3 = NewReport3(_dataVersion.Minor);
                         newReport3[5] = (byte)value;
                         if (!hidDevice.WriteFeatureData(newReport3))
                             ThrowIOException();
@@ -106,7 +108,7 @@ namespace ESP32SimWheel
                 }
                 set
                 {
-                    byte[] newReport3 = NewReport3();
+                    byte[] newReport3 = NewReport3(_dataVersion.Minor);
                     newReport3[2] = (byte)value;
                     if (!hidDevice.WriteFeatureData(newReport3))
                         ThrowIOException();
@@ -156,7 +158,7 @@ namespace ESP32SimWheel
                 get { return (ClutchWorkingModes)_report3[1]; }
                 set
                 {
-                    byte[] newReport3 = NewReport3();
+                    byte[] newReport3 = NewReport3(_dataVersion.Minor);
                     newReport3[1] = (byte)value;
                     if (!hidDevice.WriteFeatureData(newReport3))
                         ThrowIOException();
@@ -170,13 +172,57 @@ namespace ESP32SimWheel
                 {
                     if (value < 255)
                     {
-                        byte[] newReport3 = NewReport3();
+                        byte[] newReport3 = NewReport3(_dataVersion.Minor);
                         newReport3[3] = value;
                         if (!hidDevice.WriteFeatureData(newReport3))
                             ThrowIOException();
                     }
                 }
             }
+
+            // --------------------------------------------------------
+            // IPixelControl implementation
+            // --------------------------------------------------------
+
+            public void SetPixels(PixelGroups group, Color[] pixelData)
+            {
+                if (pixelData != null)
+                {
+                    byte pixelCount = Capabilities.GetPixelCount(group);
+                    if (pixelCount > pixelData.Length)
+                        pixelCount = (byte)pixelData.Length;
+
+                    for (byte index = 0; (index < pixelCount); index++)
+                    {
+                        _report30[0] = Constants.RID_OUTPUT_PIXEL;
+                        _report30[1] = (byte)group;
+                        _report30[2] = index;
+                        _report30[3] = pixelData[index].B;
+                        _report30[4] = pixelData[index].G;
+                        _report30[5] = pixelData[index].R;
+                        _report30[6] = 0;
+                        if (!hidDevice.Write(_report30))
+                            ThrowIOException();
+                    }
+                }
+            }
+
+            public void ShowPixelsNow()
+            {
+                byte[] report3 = NewReport3(_dataVersion.Minor);
+                report3[4] = Constants.CMD_SHOW_PIXELS;
+                if (!hidDevice.WriteFeatureData(report3))
+                    ThrowIOException();
+            }
+
+            public void ResetPixels()
+            {
+                byte[] report3 = NewReport3(_dataVersion.Minor);
+                report3[4] = Constants.CMD_RESET_PIXELS;
+                if (!hidDevice.WriteFeatureData(report3))
+                    ThrowIOException();
+            }
+
 
             // --------------------------------------------------------
             // Constructor
@@ -217,9 +263,28 @@ namespace ESP32SimWheel
                     :
                     (byte)0;
 
+                // Retrieve pixel count
+                byte telemetryLedsCount = (capabilitiesReport.Length >= Constants.REPORT2_SIZE_V1_4) && (_dataVersion.Minor >= 4) ?
+                    capabilitiesReport[18]
+                    :
+                    (byte)0;
+                byte buttonsLightingCountCount = (capabilitiesReport.Length >= Constants.REPORT2_SIZE_V1_4) && (_dataVersion.Minor >= 4) ?
+                    capabilitiesReport[19]
+                    :
+                    (byte)0;
+                byte individualLedsCount = (capabilitiesReport.Length >= Constants.REPORT2_SIZE_V1_4) && (_dataVersion.Minor >= 4) ?
+                    capabilitiesReport[20]
+                    :
+                    (byte)0;
+
                 // Create capabilities struct
                 ushort flags = BitConverter.ToUInt16(capabilitiesReport, 7);
-                this._capabilities = new Capabilities(flags, fps);
+                this._capabilities = new Capabilities(
+                    flags,
+                    fps,
+                    telemetryLedsCount,
+                    buttonsLightingCountCount,
+                    individualLedsCount);
 
                 // Populate HidInfo
                 _hidInfo.Path = hidDevice.DevicePath;
@@ -234,11 +299,14 @@ namespace ESP32SimWheel
                 else
                     _hidInfo.DisplayName = oemDisplayName;
 
+                // Create report #3 (wheel configuration)
+                _report3 = NewReport3(_dataVersion.Minor);
+
                 // Initialize ITelemetryData implementation
                 InitializeTelemetryData();
 
-                // Create report #3 (wheel configuration)
-                _report3 = NewReport3();
+                // Initialize IPixelControl implementation
+                InitializePixelControl();
 
                 // Initialize
                 Refresh();
@@ -246,6 +314,7 @@ namespace ESP32SimWheel
             } // constructor
 
             partial void InitializeTelemetryData();
+            partial void InitializePixelControl();
 
             // --------------------------------------------------------
             // Private methods in help of the class constructor
@@ -290,7 +359,8 @@ namespace ESP32SimWheel
                         (maxOutputReportSize >= Constants.REPORT21_SIZE_V1_3) &&
                         (maxOutputReportSize >= Constants.REPORT20_SIZE_V1_3) &&
                         (maxOutputReportSize >= Constants.REPORT22_SIZE_V1_3) &&
-                        (maxOutputReportSize >= Constants.REPORT23_SIZE_V1_3))
+                        (maxOutputReportSize >= Constants.REPORT23_SIZE_V1_3) &&
+                        (maxOutputReportSize >= Constants.REPORT30_SIZE_V1_4))
                     return;
                 if (maxOutputReportSize == 0)
                     return;
@@ -333,10 +403,11 @@ namespace ESP32SimWheel
             // --------------------------------------------------------
 
             private byte[] _report3;
+            private byte[] _report30 = new byte[Constants.REPORT30_SIZE_V1_4];
 
-            private byte[] NewReport3()
+            private static byte[] NewReport3(ushort minorVersion)
             {
-                byte[] report = Enumerable.Repeat<byte>(0xFF, GetReport3Size(_dataVersion.Minor)).ToArray();
+                byte[] report = Enumerable.Repeat<byte>(0xFF, GetReport3Size(minorVersion)).ToArray();
                 report[0] = 3;
                 return report;
             }
