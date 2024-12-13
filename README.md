@@ -83,6 +83,10 @@ There is nothing to configure.
 Devices capable of individual pixel control will receive pixel data
 as long as they are detected and an LED profile is configured and stored.
 
+Unlike other SimHub content, LED profiles are not automatically saved or applied.
+You have to press the `💾 Apply and save` button.
+As a result, you will not be able to see the changes live.
+
 ### Troubleshooting
 
 Plugin activity is shown in the `logs\simhub.txt` file relative to
