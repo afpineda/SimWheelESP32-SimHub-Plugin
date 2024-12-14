@@ -8,6 +8,7 @@
 #endregion License
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Windows.Media;
 using System.Collections;
@@ -84,6 +85,7 @@ namespace Afpineda.ESP32SimWheelPlugin
                 MonitorGameAndCar(ref data);
                 UpdateDeviceListWhenNeeded();
                 SendTelemetryData(ref data);
+                SendPixelData();
                 MonitorSaveRequest();
             }
             catch (Exception ex)
@@ -123,16 +125,19 @@ namespace Afpineda.ESP32SimWheelPlugin
 
         private void SendTelemetryData(ref GameData data)
         {
-            System.Drawing.Color[] pixels = null;
             if ((data.GameRunning) && (data.NewData != null))
-            {
                 foreach (var device in _devices)
-                {
                     if ((device.TelemetryData != null) &&
                         !device.TelemetryData.SendTelemetry(ref data))
                         _refreshDeviceList = true;
+        }
 
-                    if (device.Pixels != null)
+        private void SendPixelData()
+        {
+            System.Drawing.Color[] pixels = null;
+            foreach (var device in _devices)
+                if (device.Pixels != null)
+                    try
                     {
                         pixels = LocateRGBLedsDriver(
                             device.UniqueID,
@@ -154,8 +159,10 @@ namespace Afpineda.ESP32SimWheelPlugin
 
                         device.Pixels.ShowPixelsNow();
                     }
-                }
-            }
+                    catch (IOException)
+                    {
+                        _refreshDeviceList = true;
+                    }
         }
 
         private void MonitorBindingsEnabling()
