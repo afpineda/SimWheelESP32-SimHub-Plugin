@@ -85,7 +85,7 @@ namespace Afpineda.ESP32SimWheelPlugin
                 MonitorGameAndCar(ref data);
                 UpdateDeviceListWhenNeeded();
                 SendTelemetryData(ref data);
-                SendPixelData();
+                SendPixelData(ref data, pluginManager);
                 MonitorSaveRequest();
             }
             catch (Exception ex)
@@ -132,31 +132,24 @@ namespace Afpineda.ESP32SimWheelPlugin
                         _refreshDeviceList = true;
         }
 
-        private void SendPixelData()
+        private void SendPixelData(ref GameData data, PluginManager manager)
         {
-            System.Drawing.Color[] pixels = null;
             foreach (var device in _devices)
                 if (device.Pixels != null)
                     try
                     {
-                        pixels = LocateRGBLedsDriver(
-                            device.UniqueID,
-                            PixelGroups.TelemetryLeds)
-                            ?.GetResult();
-                        device.Pixels.SetPixels(PixelGroups.TelemetryLeds, pixels);
-
-                        pixels = LocateRGBLedsDriver(
-                            device.UniqueID,
-                            PixelGroups.ButtonsLighting)
-                            ?.GetResult();
-                        device.Pixels.SetPixels(PixelGroups.ButtonsLighting, pixels);
-
-                        pixels = LocateRGBLedsDriver(
-                            device.UniqueID,
-                            PixelGroups.IndividualLeds)
-                            ?.GetResult();
-                        device.Pixels.SetPixels(PixelGroups.IndividualLeds, pixels);
-
+                        foreach (PixelGroups group in Enum.GetValues(typeof(PixelGroups)))
+                            if (device.Capabilities.GetPixelCount(group) > 0)
+                            {
+                                RGBLedsDriver driver = LocateRGBLedsDriver(
+                                    device.UniqueID,
+                                    group);
+                                if (driver != null)
+                                {
+                                    driver.UpdateData(ref data, manager);
+                                    device.Pixels.SetPixels(group, driver.GetResult());
+                                }
+                            }
                         device.Pixels.ShowPixelsNow();
                     }
                     catch (IOException)
