@@ -17,7 +17,9 @@ namespace ESP32SimWheel
         Clutch = 0,
         Axis,
         ALT,
-        Button
+        Button,
+        LaunchControl_LeftPaddle,
+        LaunchControl_RightPaddle
     }
 
     public enum AltButtonWorkingModes : byte

@@ -46,7 +46,7 @@ namespace ESP32SimWheel
             }
             if (AnimateClutchWorkingMode)
             {
-                if (_clutchWorkingMode == ClutchWorkingModes.Button)
+                if (_clutchWorkingMode == ClutchWorkingModes.LaunchControl_RightPaddle)
                     _clutchWorkingMode = ClutchWorkingModes.Clutch;
                 else
                     _clutchWorkingMode = _clutchWorkingMode + 1;

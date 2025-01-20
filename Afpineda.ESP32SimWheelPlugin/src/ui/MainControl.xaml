@@ -184,6 +184,8 @@
                                     <ListBoxItem x:Name="CWMItem_Axis">Axis</ListBoxItem>
                                     <ListBoxItem x:Name="CWMItem_Alt">Alternate mode</ListBoxItem>
                                     <ListBoxItem x:Name="CWMItem_Button">Regular button</ListBoxItem>
+                                    <ListBoxItem x:Name="CWMItem_LaunchControl_Left">Launch control (left paddle master)</ListBoxItem>
+                                    <ListBoxItem x:Name="CWMItem_LaunchControl_Right">Launch control (right paddle master)</ListBoxItem>
                                 </styles:SHListBox>
                             </styles:SHExpander>
                             <styles:SHSectionSeparator />

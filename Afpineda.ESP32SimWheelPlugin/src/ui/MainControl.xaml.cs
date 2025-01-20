@@ -168,7 +168,9 @@ namespace Afpineda.ESP32SimWheelPlugin
                 ClutchWorkingModeListBox.SelectedIndex =
                     (int)clutch.ClutchWorkingMode;
                 BitePointSlider.IsEnabled =
-                    (clutch.ClutchWorkingMode == ClutchWorkingModes.Clutch);
+                    (clutch.ClutchWorkingMode == ClutchWorkingModes.Clutch) ||
+                    (clutch.ClutchWorkingMode == ClutchWorkingModes.LaunchControl_LeftPaddle) ||
+                    (clutch.ClutchWorkingMode == ClutchWorkingModes.LaunchControl_RightPaddle);
             }
         }
 
@@ -348,7 +350,10 @@ namespace Afpineda.ESP32SimWheelPlugin
                         try
                         {
                             SelectedDevice.Clutch.ClutchWorkingMode = workingMode;
-                            BitePointSlider.IsEnabled = (workingMode == ClutchWorkingModes.Clutch);
+                            BitePointSlider.IsEnabled =
+                                (workingMode == ClutchWorkingModes.Clutch) ||
+                                (workingMode == ClutchWorkingModes.LaunchControl_LeftPaddle) ||
+                                (workingMode == ClutchWorkingModes.LaunchControl_RightPaddle);
                             return;
                         }
                         catch (Exception)
