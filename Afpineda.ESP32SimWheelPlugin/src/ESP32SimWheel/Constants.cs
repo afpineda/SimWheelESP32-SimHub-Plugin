@@ -38,6 +38,7 @@ namespace ESP32SimWheel
             internal const short REPORT3_SIZE_V1_0 = 4 + 1;
             internal const short REPORT3_SIZE_V1_1 = REPORT3_SIZE_V1_0 + 1;
             internal const short REPORT3_SIZE_V1_2 = REPORT3_SIZE_V1_1 + 1;
+            internal const short REPORT3_SIZE_V1_5 = REPORT3_SIZE_V1_2 + 1;
             internal const short REPORT20_SIZE_V1_3 = 10 + 1;
             internal const short REPORT21_SIZE_V1_3 = 9 + 1;
             internal const short REPORT22_SIZE_V1_3 = 11 + 1;
@@ -49,7 +50,7 @@ namespace ESP32SimWheel
             internal const byte CMD_RESET_PIXELS = 8;
 
             // version
-            internal const ushort SUPPORTED_MINOR_VERSION = 4;
+            internal const ushort SUPPORTED_MINOR_VERSION = 5;
         } // class Constants
     } // namespace V1
 } // namespace ESP32SimWheel

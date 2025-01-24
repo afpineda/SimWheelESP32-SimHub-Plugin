@@ -346,7 +346,9 @@ namespace ESP32SimWheel
                     return;
                 if ((dataMinorVersion == 1) && (maxFeatureReportSize >= Constants.REPORT3_SIZE_V1_1))
                     return;
-                else if (maxFeatureReportSize >= Constants.REPORT3_SIZE_V1_2)
+                else if ((dataMinorVersion < 5) && (maxFeatureReportSize >= Constants.REPORT3_SIZE_V1_2))
+                    return;
+                else if ((maxFeatureReportSize >= Constants.REPORT3_SIZE_V1_5))
                     return;
                 throw new UnsupportedDeviceException();
             }
@@ -388,10 +390,10 @@ namespace ESP32SimWheel
 
             private static short GetReport3Size(ushort dataMinorVersion)
             {
-                if (dataMinorVersion >= 2)
-                {
+                if (dataMinorVersion >= 5)
+                    return Constants.REPORT3_SIZE_V1_5;
+                else if (dataMinorVersion >= 2)
                     return Constants.REPORT3_SIZE_V1_2;
-                }
                 else if (dataMinorVersion == 1)
                     return Constants.REPORT3_SIZE_V1_1;
                 else
