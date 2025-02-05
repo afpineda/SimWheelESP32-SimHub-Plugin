@@ -7,9 +7,11 @@
  *****************************************************************************/
 #endregion License
 
+using System;
 using System.Text;
 using System.Drawing;
 using SimHub.Plugins;
+using SimHub.Plugins.DataPlugins.RGBDriver;
 using GameReaderCommon;
 
 namespace ESP32SimWheel
@@ -276,6 +278,31 @@ namespace ESP32SimWheel
             // Do nothing
         }
 
+        public bool RenderPixels(ref GameData data, PluginManager manager)
+        {
+            foreach (PixelGroups group in Enum.GetValues(typeof(PixelGroups)))
+                if (_rgbLedsDriver[(int)group] != null)
+                {
+                    _rgbLedsDriver[(int)group].UpdateData(ref data, manager);
+                    SetPixels(group, _rgbLedsDriver[(int)group].GetResult());
+                }
+            ShowPixelsNow();
+            return true;
+        }
+
+        public void ReloadLedsDriver()
+        {
+            foreach (PixelGroups group in Enum.GetValues(typeof(PixelGroups)))
+            {
+                _rgbLedsDriver[(int)group] =
+                    (Capabilities.GetPixelCount(group) > 0) ?
+                        new RGBLedsDriver(
+                            Afpineda.ESP32SimWheelPlugin.Utils.GetLedsSettingsFile(UniqueID, group))
+                    :
+                        null;
+            }
+        }
+
         // --------------------------------------------------------
         // Private fields
         // --------------------------------------------------------
@@ -284,6 +311,8 @@ namespace ESP32SimWheel
         private DataVersion _dataVersion = new DataVersion();
         private Capabilities _capabilities = new Capabilities(0, 0);
         private DPadWorkingModes _dPadWorkingMode = DPadWorkingModes.Navigation;
+        private readonly RGBLedsDriver[] _rgbLedsDriver = new RGBLedsDriver[3];
+
     } // class FakeDevice
 
     public class FakeDeviceWrapper : ESP32SimWheel.IDevice

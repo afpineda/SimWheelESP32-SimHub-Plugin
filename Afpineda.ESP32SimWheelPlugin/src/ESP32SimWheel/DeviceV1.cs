@@ -25,8 +25,7 @@ namespace ESP32SimWheel
             ESP32SimWheel.ISecurityLock,
             ESP32SimWheel.IBattery,
             ESP32SimWheel.IDpad,
-            ESP32SimWheel.IAltButtons,
-            ESP32SimWheel.IPixelControl
+            ESP32SimWheel.IAltButtons
         {
             // --------------------------------------------------------
             // String representation
@@ -50,7 +49,6 @@ namespace ESP32SimWheel
             public IBattery Battery => (_capabilities.HasBattery) ? this : null;
             public IDpad DPad => (_capabilities.HasDPad) ? this : null;
             public IAltButtons AltButtons => (_capabilities.HasAltButtons) ? this : null;
-            public IPixelControl Pixels => _capabilities.HasPixelControl ? this : null;
             public ulong UniqueID { get; private set; }
 
             public bool Refresh()
@@ -179,50 +177,6 @@ namespace ESP32SimWheel
                     }
                 }
             }
-
-            // --------------------------------------------------------
-            // IPixelControl implementation
-            // --------------------------------------------------------
-
-            public void SetPixels(PixelGroups group, Color[] pixelData)
-            {
-                if (pixelData != null)
-                {
-                    byte pixelCount = Capabilities.GetPixelCount(group);
-                    if (pixelCount > pixelData.Length)
-                        pixelCount = (byte)pixelData.Length;
-
-                    for (byte index = 0; (index < pixelCount); index++)
-                    {
-                        _report30[0] = Constants.RID_OUTPUT_PIXEL;
-                        _report30[1] = (byte)group;
-                        _report30[2] = index;
-                        _report30[3] = pixelData[index].B;
-                        _report30[4] = pixelData[index].G;
-                        _report30[5] = pixelData[index].R;
-                        _report30[6] = 0;
-                        if (!hidDevice.Write(_report30))
-                            ThrowIOException();
-                    }
-                }
-            }
-
-            public void ShowPixelsNow()
-            {
-                byte[] report3 = NewReport3(_dataVersion.Minor);
-                report3[4] = Constants.CMD_SHOW_PIXELS;
-                if (!hidDevice.WriteFeatureData(report3))
-                    ThrowIOException();
-            }
-
-            public void ResetPixels()
-            {
-                byte[] report3 = NewReport3(_dataVersion.Minor);
-                report3[4] = Constants.CMD_RESET_PIXELS;
-                if (!hidDevice.WriteFeatureData(report3))
-                    ThrowIOException();
-            }
-
 
             // --------------------------------------------------------
             // Constructor

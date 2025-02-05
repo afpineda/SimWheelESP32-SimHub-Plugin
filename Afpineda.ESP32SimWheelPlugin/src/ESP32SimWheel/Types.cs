@@ -9,6 +9,7 @@
 
 using System.Drawing;
 using GameReaderCommon;
+using SimHub.Plugins;
 
 namespace ESP32SimWheel
 {
@@ -179,6 +180,8 @@ namespace ESP32SimWheel
         void SetPixels(PixelGroups group, Color[] pixelData);
         void ShowPixelsNow();
         void ResetPixels();
+        bool RenderPixels(ref GameData data, PluginManager manager);
+        void ReloadLedsDriver();
     }
 
     public interface IDevice

@@ -134,28 +134,17 @@ namespace Afpineda.ESP32SimWheelPlugin
 
         private void SendPixelData(ref GameData data, PluginManager manager)
         {
+            ulong reload = _reloadLedsDriverRequest;
+            if (reload != 0)
+                foreach (var device in _devices)
+                    if (device.UniqueID == reload)
+                        device.Pixels?.ReloadLedsDriver();
+
             foreach (var device in _devices)
-                if (device.Pixels != null)
-                    try
-                    {
-                        foreach (PixelGroups group in Enum.GetValues(typeof(PixelGroups)))
-                            if (device.Capabilities.GetPixelCount(group) > 0)
-                            {
-                                RGBLedsDriver driver = LocateRGBLedsDriver(
-                                    device.UniqueID,
-                                    group);
-                                if (driver != null)
-                                {
-                                    driver.UpdateData(ref data, manager);
-                                    device.Pixels.SetPixels(group, driver.GetResult());
-                                }
-                            }
-                        device.Pixels.ShowPixelsNow();
-                    }
-                    catch (IOException)
-                    {
-                        _refreshDeviceList = true;
-                    }
+                if ((device.Pixels != null) && !device.Pixels.RenderPixels(ref data, manager))
+                    _refreshDeviceList = true;
+            if (reload != 0)
+                _reloadLedsDriverRequest = 0;
         }
 
         private void MonitorBindingsEnabling()
@@ -206,11 +195,6 @@ namespace Afpineda.ESP32SimWheelPlugin
         /// <param name="pluginManager"></param>
         public void Init(PluginManager pluginManager)
         {
-            // Initialize fields
-            _ledDrivers[(int)PixelGroups.TelemetryLeds] = new Dictionary<ulong, RGBLedsDriver>();
-            _ledDrivers[(int)PixelGroups.ButtonsLighting] = new Dictionary<ulong, RGBLedsDriver>();
-            _ledDrivers[(int)PixelGroups.IndividualLeds] = new Dictionary<ulong, RGBLedsDriver>();
-
             // Load settings
             Settings = this.ReadCommonSettings<CustomSettings>(
                 "GeneralSettings",
@@ -268,12 +252,7 @@ namespace Afpineda.ESP32SimWheelPlugin
             SimHub.Logging.Current.InfoFormat(
                 "[ESP32 Sim-wheel] Request to reload RGB Leds drivers for device {0:X16}",
                 deviceID);
-            lock (_reloadLedsDriversLock)
-            {
-                _ledDrivers[(int)PixelGroups.TelemetryLeds].Remove(deviceID);
-                _ledDrivers[(int)PixelGroups.ButtonsLighting].Remove(deviceID);
-                _ledDrivers[(int)PixelGroups.IndividualLeds].Remove(deviceID);
-            }
+            _reloadLedsDriverRequest = deviceID;
         }
 
         // --------------------------------------------------------
@@ -321,29 +300,6 @@ namespace Afpineda.ESP32SimWheelPlugin
             this.SaveCommonSettings<CustomSettings>("GeneralSettings", Settings);
         }
 
-        private RGBLedsDriver LocateRGBLedsDriver(
-            ulong deviceID,
-            PixelGroups group)
-        {
-
-            Dictionary<ulong, RGBLedsDriver> dict = _ledDrivers[(int)group];
-            RGBLedsDriver driver = null;
-            lock (_reloadLedsDriversLock)
-            {
-                if (!dict.TryGetValue(deviceID, out driver) || (driver == null))
-                {
-                    driver = new RGBLedsDriver(
-                        Utils.GetLedsSettingsFile(deviceID, group));
-                    dict.Add(deviceID, driver);
-                    SimHub.Logging.Current.InfoFormat(
-                        "[ESP32 Sim-wheel] RGB Leds driver loaded for device {0:X16} and group {1}",
-                            deviceID,
-                            group);
-                }
-            }
-            return driver;
-        }
-
         private void ResetAllPixels()
         {
             foreach (var device in _devices)
@@ -368,8 +324,6 @@ namespace Afpineda.ESP32SimWheelPlugin
         private bool _gamePaused = false;
         private bool _bindingsEnabledEvent = false;
         private bool _saveRequest = false;
-        private readonly Dictionary<ulong, RGBLedsDriver>[] _ledDrivers = new Dictionary<ulong, RGBLedsDriver>[3];
-        private const int DEVICE_MONITOR_INTERVAL_MS = 1000;
-        private readonly object _reloadLedsDriversLock = new object();
+        private ulong _reloadLedsDriverRequest = 0;
     }
 }
