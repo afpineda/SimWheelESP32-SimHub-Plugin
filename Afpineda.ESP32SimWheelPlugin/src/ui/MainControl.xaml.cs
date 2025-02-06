@@ -116,8 +116,15 @@ namespace Afpineda.ESP32SimWheelPlugin
         {
             // if a device is selected, read device state and
             // update UI elements only if there are changes
-            if (SelectedDevice?.Refresh() ?? false)
-                UpdateUIFromDeviceState();
+            try
+            {
+                if (SelectedDevice?.Refresh() ?? false)
+                    UpdateUIFromDeviceState();
+            }
+            catch (Exception)
+            {
+                RefreshButton_click(null, null);
+            }
         }
 
         private void UpdateUIFromDeviceState()
