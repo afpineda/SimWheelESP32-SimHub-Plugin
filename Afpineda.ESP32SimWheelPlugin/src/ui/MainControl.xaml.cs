@@ -8,6 +8,7 @@
 #endregion License
 
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -48,7 +49,7 @@ namespace Afpineda.ESP32SimWheelPlugin
             // Initialization
             this.Plugin = plugin;
             CreateBindings();
-            RefreshButton_click(this, null);
+            RefreshAvailableDevices();
 
             // Timer to poll selected device
             _updateTimer = new DispatcherTimer();
@@ -116,35 +117,27 @@ namespace Afpineda.ESP32SimWheelPlugin
         {
             // if a device is selected, read device state and
             // update UI elements only if there are changes
-            try
+            if (SelectedDevice != null)
             {
-                if (SelectedDevice?.Refresh() ?? false)
+                if (!SelectedDevice.IsAlive)
+                    RefreshAvailableDevices();
+                else if (SelectedDevice?.Refresh() ?? false)
                     UpdateUIFromDeviceState();
-            }
-            catch (Exception)
-            {
-                RefreshButton_click(null, null);
             }
         }
 
         private void UpdateUIFromDeviceState()
         {
             if (SelectedDevice != null)
-                try
-                {
-                    _updating = true;
-                    UpdateUIFromBatteryState(SelectedDevice.Battery);
-                    UpdateUIFromClutchState(SelectedDevice.Clutch);
-                    UpdateUIFromSecurityLockState(SelectedDevice.SecurityLock);
-                    UpdateUIFromDPad(SelectedDevice.DPad);
-                    UpdateUIFromAltButtons(SelectedDevice.AltButtons);
-                    _updating = false;
-                }
-                catch (Exception)
-                {
-                    _updating = false;
-                    RefreshButton_click(null, null);
-                }
+            {
+                _updating = true;
+                UpdateUIFromBatteryState(SelectedDevice.Battery);
+                UpdateUIFromClutchState(SelectedDevice.Clutch);
+                UpdateUIFromSecurityLockState(SelectedDevice.SecurityLock);
+                UpdateUIFromDPad(SelectedDevice.DPad);
+                UpdateUIFromAltButtons(SelectedDevice.AltButtons);
+                _updating = false;
+            }
         }
 
         private void UpdateUIFromSecurityLockState(ESP32SimWheel.ISecurityLock sLock)
@@ -229,54 +222,48 @@ namespace Afpineda.ESP32SimWheelPlugin
         private void OnSelectDevice(object sender, SelectionChangedEventArgs args)
         {
             if (SelectedDevice != null)
-                try
-                {
-                    SimHub.Logging.Current.InfoFormat("[ESP32 Sim-wheel] [UI] Device selected: {0}", SelectedDevice.HidInfo.DisplayName);
+            {
+                SimHub.Logging.Current.InfoFormat("[ESP32 Sim-wheel] [UI] Device selected: {0}", SelectedDevice.HidInfo.DisplayName);
 
-                    // Update static UI elements (not dependant on device state)
-                    TabVisible(InfoPage, true);
-                    HidInfoText.Text = string.Format("{0,4:X4} / {1,4:X4}",
-                        SelectedDevice.HidInfo.VendorID,
-                        SelectedDevice.HidInfo.ProductID);
-                    DataVersionText.Text = string.Format("{0}.{1}",
-                        SelectedDevice.DataVersion.Major,
-                        SelectedDevice.DataVersion.Minor);
-                    DeviceIDText.Text = string.Format("{0,16:X16}",
-                        SelectedDevice.UniqueID);
-                    if (SelectedDevice.Capabilities.UsesTelemetryData)
-                        TelemetryDataText.Text = string.Format("Yes ({0} frames per second)", SelectedDevice.Capabilities.FramesPerSecond);
-                    else
-                        TelemetryDataText.Text = "No";
-                    TelemetryLedsCount.Text = SelectedDevice.Capabilities.TelemetryLedsCount.ToString();
-                    ButtonsLightingCount.Text = SelectedDevice.Capabilities.ButtonsLightingCount.ToString();
-                    IndividualLedsCount.Text = SelectedDevice.Capabilities.IndividualLedsCount.ToString();
+                // Update static UI elements (not dependant on device state)
+                TabVisible(InfoPage, true);
+                HidInfoText.Text = string.Format("{0,4:X4} / {1,4:X4}",
+                    SelectedDevice.HidInfo.VendorID,
+                    SelectedDevice.HidInfo.ProductID);
+                DataVersionText.Text = string.Format("{0}.{1}",
+                    SelectedDevice.DataVersion.Major,
+                    SelectedDevice.DataVersion.Minor);
+                DeviceIDText.Text = string.Format("{0,16:X16}",
+                    SelectedDevice.UniqueID);
+                if (SelectedDevice.Capabilities.UsesTelemetryData)
+                    TelemetryDataText.Text = string.Format("Yes ({0} frames per second)", SelectedDevice.Capabilities.FramesPerSecond);
+                else
+                    TelemetryDataText.Text = "No";
+                TelemetryLedsCount.Text = SelectedDevice.Capabilities.TelemetryLedsCount.ToString();
+                ButtonsLightingCount.Text = SelectedDevice.Capabilities.ButtonsLightingCount.ToString();
+                IndividualLedsCount.Text = SelectedDevice.Capabilities.IndividualLedsCount.ToString();
 
-                    TelemetryLedsGroup.IsEnabled = (SelectedDevice.Capabilities.TelemetryLedsCount > 0);
-                    ButtonLedsGroup.IsEnabled = (SelectedDevice.Capabilities.ButtonsLightingCount > 0);
-                    IndividualLedsGroup.IsEnabled = (SelectedDevice.Capabilities.IndividualLedsCount > 0);
-                    TelemetryLedsGroup.Visibility =
-                        (TelemetryLedsGroup.IsEnabled) ? Visibility.Visible : Visibility.Collapsed;
-                    ButtonLedsGroup.Visibility =
-                        (ButtonLedsGroup.IsEnabled) ? Visibility.Visible : Visibility.Collapsed;
-                    IndividualLedsGroup.Visibility =
-                        (IndividualLedsGroup.IsEnabled) ? Visibility.Visible : Visibility.Collapsed;
+                TelemetryLedsGroup.IsEnabled = (SelectedDevice.Capabilities.TelemetryLedsCount > 0);
+                ButtonLedsGroup.IsEnabled = (SelectedDevice.Capabilities.ButtonsLightingCount > 0);
+                IndividualLedsGroup.IsEnabled = (SelectedDevice.Capabilities.IndividualLedsCount > 0);
+                TelemetryLedsGroup.Visibility =
+                    (TelemetryLedsGroup.IsEnabled) ? Visibility.Visible : Visibility.Collapsed;
+                ButtonLedsGroup.Visibility =
+                    (ButtonLedsGroup.IsEnabled) ? Visibility.Visible : Visibility.Collapsed;
+                IndividualLedsGroup.Visibility =
+                    (IndividualLedsGroup.IsEnabled) ? Visibility.Visible : Visibility.Collapsed;
 
-                    TabVisible(ClutchPage, SelectedDevice.Capabilities.HasClutch);
-                    TabVisible(AltButtonsPage, SelectedDevice.Capabilities.HasAltButtons);
-                    TabVisible(DPadPage, SelectedDevice.Capabilities.HasDPad);
-                    TabVisible(LedsPage, SelectedDevice.Capabilities.HasPixelControl);
-                    MainPages.SelectedIndex = 0;
+                TabVisible(ClutchPage, SelectedDevice.Capabilities.HasClutch);
+                TabVisible(AltButtonsPage, SelectedDevice.Capabilities.HasAltButtons);
+                TabVisible(DPadPage, SelectedDevice.Capabilities.HasDPad);
+                TabVisible(LedsPage, SelectedDevice.Capabilities.HasPixelControl);
+                MainPages.SelectedIndex = 0;
 
-                    // Read device state and update dynamic UI elements
-                    UpdateLedsDrivers();
-                    SelectedDevice.Refresh();
-                    UpdateUIFromDeviceState();
-                }
-                catch (Exception)
-                {
-                    // Device disconnected, reload device list
-                    RefreshButton_click(null, null);
-                }
+                // Read device state and update dynamic UI elements
+                UpdateLedsDrivers();
+                SelectedDevice.Refresh();
+                UpdateUIFromDeviceState();
+            }
             else
             {
                 // No device is selected (or no devices are available)
@@ -295,21 +282,18 @@ namespace Afpineda.ESP32SimWheelPlugin
             if (SelectedDevice?.Clutch == null)
                 return;
             if (!_updating)
-                // propagate UI -> device
-                try
-                {
-                    SelectedDevice.Clutch.BitePoint = (byte)BitePointSlider.Value;
-                }
-                catch (Exception)
-                {
-                    RefreshButton_click(null, null);
-                }
+            {
+                SelectedDevice.Clutch.BitePoint = (byte)BitePointSlider.Value;
+            }
         }
 
         private void RefreshButton_click(object sender, System.Windows.RoutedEventArgs e)
         {
             Plugin.Refresh();
-
+            RefreshAvailableDevices();
+        }
+        private void RefreshAvailableDevices()
+        {
             // Remember current device selection
             ESP32SimWheel.IDevice currentDevice = SelectedDevice;
             ESP32SimWheel.IDevice autoSelection = null;
@@ -354,20 +338,14 @@ namespace Afpineda.ESP32SimWheelPlugin
                             ItemContainerGenerator.
                                 ContainerFromIndex((int)workingMode);
                     if (item?.IsSelected ?? false)
-                        try
-                        {
-                            SelectedDevice.Clutch.ClutchWorkingMode = workingMode;
-                            BitePointSlider.IsEnabled =
-                                (workingMode == ClutchWorkingModes.Clutch) ||
-                                (workingMode == ClutchWorkingModes.LaunchControl_LeftPaddle) ||
-                                (workingMode == ClutchWorkingModes.LaunchControl_RightPaddle);
-                            return;
-                        }
-                        catch (Exception)
-                        {
-                            RefreshButton_click(null, null);
-                            return;
-                        }
+                    {
+                        SelectedDevice.Clutch.ClutchWorkingMode = workingMode;
+                        BitePointSlider.IsEnabled =
+                            (workingMode == ClutchWorkingModes.Clutch) ||
+                            (workingMode == ClutchWorkingModes.LaunchControl_LeftPaddle) ||
+                            (workingMode == ClutchWorkingModes.LaunchControl_RightPaddle);
+                        return;
+                    }
                 }
         }
 
@@ -382,37 +360,27 @@ namespace Afpineda.ESP32SimWheelPlugin
         private void OnAltButtonsWorkingModeChanged(object sender, SelectionChangedEventArgs e)
         {
             if ((SelectedDevice?.AltButtons != null) && !_updating)
-                try
-                {
-                    if (AltButtonsButtonMode.IsSelected)
-                        SelectedDevice.AltButtons.AltButtonsWorkingMode =
-                            AltButtonWorkingModes.Button;
-                    else
-                        SelectedDevice.AltButtons.AltButtonsWorkingMode =
-                            AltButtonWorkingModes.ALT;
-                }
-                catch
-                {
-                    RefreshButton_click(null, null);
-                }
+            {
+                if (AltButtonsButtonMode.IsSelected)
+                    SelectedDevice.AltButtons.AltButtonsWorkingMode =
+                        AltButtonWorkingModes.Button;
+                else
+                    SelectedDevice.AltButtons.AltButtonsWorkingMode =
+                        AltButtonWorkingModes.ALT;
+            }
         }
 
         private void OnDPadWorkingModeChanged(object sender, SelectionChangedEventArgs e)
         {
             if ((SelectedDevice?.DPad != null) && !_updating)
-                try
-                {
-                    if (DPadButtonMode.IsSelected)
-                        SelectedDevice.DPad.DPadWorkingMode =
-                            DPadWorkingModes.Button;
-                    else
-                        SelectedDevice.DPad.DPadWorkingMode =
-                            DPadWorkingModes.Navigation;
-                }
-                catch
-                {
-                    RefreshButton_click(null, null);
-                }
+            {
+                if (DPadButtonMode.IsSelected)
+                    SelectedDevice.DPad.DPadWorkingMode =
+                        DPadWorkingModes.Button;
+                else
+                    SelectedDevice.DPad.DPadWorkingMode =
+                        DPadWorkingModes.Navigation;
+            }
         }
 
         private void LedsEditProfile_Click(object sender, System.Windows.RoutedEventArgs e)

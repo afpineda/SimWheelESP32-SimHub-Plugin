@@ -29,62 +29,61 @@ namespace ESP32SimWheel
             // IPixelControl implementation
             // --------------------------------------------------------
 
-            public void SetPixels(PixelGroups group, Color[] pixelData)
+            public bool SetPixel(PixelGroups group, byte pixelIndex, Color pixelData)
             {
-                if (pixelData != null)
-                {
-                    byte pixelCount = Capabilities.GetPixelCount(group);
-                    if (pixelCount > pixelData.Length)
-                        pixelCount = (byte)pixelData.Length;
-
-                    for (byte index = 0; (index < pixelCount); index++)
-                    {
-                        _report30[0] = Constants.RID_OUTPUT_PIXEL;
-                        _report30[1] = (byte)group;
-                        _report30[2] = index;
-                        _report30[3] = pixelData[index].B;
-                        _report30[4] = pixelData[index].G;
-                        _report30[5] = pixelData[index].R;
-                        _report30[6] = 0;
-                        if (!hidDevice.Write(_report30))
-                            ThrowIOException();
-                    }
-                }
+                _report30[0] = Constants.RID_OUTPUT_PIXEL;
+                _report30[1] = (byte)group;
+                _report30[2] = pixelIndex;
+                _report30[3] = pixelData.B;
+                _report30[4] = pixelData.G;
+                _report30[5] = pixelData.R;
+                _report30[6] = 0;
+                IsAlive = hidDevice.Write(_report30);
+                return IsAlive;
             }
 
-            public void ShowPixelsNow()
+            public bool ShowPixelsNow()
             {
                 byte[] report3 = NewReport3(_dataVersion.Minor);
                 report3[4] = Constants.CMD_SHOW_PIXELS;
-                if (!hidDevice.WriteFeatureData(report3))
-                    ThrowIOException();
+                IsAlive = hidDevice.WriteFeatureData(report3);
+                return IsAlive;
             }
 
-            public void ResetPixels()
+            public bool ResetPixels()
             {
                 byte[] report3 = NewReport3(_dataVersion.Minor);
-                report3[4] = Constants.CMD_RESET_PIXELS;
-                if (!hidDevice.WriteFeatureData(report3))
-                    ThrowIOException();
+                IsAlive = hidDevice.WriteFeatureData(report3);
+                return IsAlive;
             }
 
-            public bool RenderPixels(ref GameData data, PluginManager manager)
+            public void ReloadLedsDriver()
             {
-                try
+                _groupUpdateCount = 0;
+                if (Capabilities.GetPixelCount(PixelGroups.TelemetryLeds) > 0)
                 {
-                    foreach (PixelGroups group in Enum.GetValues(typeof(PixelGroups)))
-                        if (_rgbLedsDriver[(int)group] != null)
-                        {
-                            _rgbLedsDriver[(int)group].UpdateData(ref data, manager);
-                            SetPixels(group, _rgbLedsDriver[(int)group].GetResult());
-                        }
-                    ShowPixelsNow();
+                    _rgbLedsDriver[0] =
+                        new RGBLedsDriver(
+                            Afpineda.ESP32SimWheelPlugin.Utils.GetLedsSettingsFile(UniqueID, PixelGroups.TelemetryLeds));
+                    _rgbLedsDriver[0].LedsUpdated += new EventHandler<Color[]>(OnLedsUpdatedGroup0);
+                    _groupUpdateCount++;
                 }
-                catch (IOException)
+                if (Capabilities.GetPixelCount(PixelGroups.ButtonsLighting) > 0)
                 {
-                    return false;
+                    _rgbLedsDriver[1] =
+                        new RGBLedsDriver(
+                            Afpineda.ESP32SimWheelPlugin.Utils.GetLedsSettingsFile(UniqueID, PixelGroups.ButtonsLighting));
+                    _rgbLedsDriver[1].LedsUpdated += new EventHandler<Color[]>(OnLedsUpdatedGroup1);
+                    _groupUpdateCount++;
                 }
-                return true;
+                if (Capabilities.GetPixelCount(PixelGroups.IndividualLeds) > 0)
+                {
+                    _rgbLedsDriver[2] =
+                        new RGBLedsDriver(
+                            Afpineda.ESP32SimWheelPlugin.Utils.GetLedsSettingsFile(UniqueID, PixelGroups.IndividualLeds));
+                    _rgbLedsDriver[2].LedsUpdated += new EventHandler<Color[]>(OnLedsUpdatedGroup2);
+                    _groupUpdateCount++;
+                }
             }
 
             // --------------------------------------------------------
@@ -96,17 +95,53 @@ namespace ESP32SimWheel
                 ReloadLedsDriver();
             }
 
-            public void ReloadLedsDriver()
+            // --------------------------------------------------------
+            // Private Methods
+            // --------------------------------------------------------
+
+            private void SendPixelData(PixelGroups group, Color[] pixelData)
             {
-                foreach (PixelGroups group in Enum.GetValues(typeof(PixelGroups)))
+                byte pixelCount = Capabilities.GetPixelCount(group);
+                if (pixelCount > pixelData.Length)
+                    pixelCount = (byte)pixelData.Length;
+                for (byte index = 0; (index < pixelCount); index++)
                 {
-                    _rgbLedsDriver[(int)group] =
-                        (Capabilities.GetPixelCount(group) > 0) ?
-                            new RGBLedsDriver(
-                                Afpineda.ESP32SimWheelPlugin.Utils.GetLedsSettingsFile(UniqueID, group))
-                        :
-                            null;
+                    // SimHub.Logging.Current.InfoFormat("Led group {0}: pixel {1} : color {2}", (byte)group, index, pixelData[index]);
+                    SetPixel(group, index, pixelData[index]);
                 }
+                // if (_groupUpdateCount > 0)
+                //     _groupUpdateCount--;
+                // if (_groupUpdateCount == 0)
+                // {
+                ShowPixelsNow();
+                //     if (_rgbLedsDriver[0] != null)
+                //         _groupUpdateCount++;
+                //     if (_rgbLedsDriver[1] != null)
+                //         _groupUpdateCount++;
+                //     if (_rgbLedsDriver[2] != null)
+                //         _groupUpdateCount++;
+                // }
+            }
+
+            private void OnLedsUpdatedGroup0(object sender, Color[] pixelData)
+            {
+                if ((pixelData == null) || (sender == null))
+                    return;
+                SendPixelData(PixelGroups.TelemetryLeds, pixelData);
+            }
+
+            private void OnLedsUpdatedGroup1(object sender, Color[] pixelData)
+            {
+                if ((pixelData == null) || (sender == null))
+                    return;
+                SendPixelData(PixelGroups.ButtonsLighting, pixelData);
+            }
+
+            private void OnLedsUpdatedGroup2(object sender, Color[] pixelData)
+            {
+                if ((pixelData == null) || (sender == null))
+                    return;
+                SendPixelData(PixelGroups.IndividualLeds, pixelData);
             }
 
             // --------------------------------------------------------
@@ -114,6 +149,7 @@ namespace ESP32SimWheel
             // --------------------------------------------------------
 
             private readonly RGBLedsDriver[] _rgbLedsDriver = new RGBLedsDriver[3];
+            private uint _groupUpdateCount = 0;
 
         } // class Device
     } // namespace V1
