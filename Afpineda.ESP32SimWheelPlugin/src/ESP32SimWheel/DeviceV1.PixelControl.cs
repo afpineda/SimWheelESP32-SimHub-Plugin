@@ -44,16 +44,27 @@ namespace ESP32SimWheel
 
             public bool ShowPixelsNow()
             {
-                byte[] report3 = NewReport3(_dataVersion.Minor);
-                report3[4] = Constants.CMD_SHOW_PIXELS;
-                IsAlive = hidDevice.WriteFeatureData(report3);
+                _report30[0] = Constants.RID_OUTPUT_PIXEL;
+                _report30[1] = 0xFF;
+                _report30[2] = 0;
+                _report30[3] = 0;
+                _report30[4] = 0;
+                _report30[5] = 0;
+                _report30[6] = 0;
+                IsAlive = hidDevice.Write(_report30);
                 return IsAlive;
             }
 
             public bool ResetPixels()
             {
-                byte[] report3 = NewReport3(_dataVersion.Minor);
-                IsAlive = hidDevice.WriteFeatureData(report3);
+                _report30[0] = Constants.RID_OUTPUT_PIXEL;
+                _report30[1] = 0xFE;
+                _report30[2] = 0;
+                _report30[3] = 0;
+                _report30[4] = 0;
+                _report30[5] = 0;
+                _report30[6] = 0;
+                IsAlive = hidDevice.Write(_report30);
                 return IsAlive;
             }
 
