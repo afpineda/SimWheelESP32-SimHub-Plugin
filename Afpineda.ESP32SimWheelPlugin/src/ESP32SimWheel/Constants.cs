@@ -50,7 +50,7 @@ namespace ESP32SimWheel
             internal const byte CMD_RESET_PIXELS = 8;
 
             // version
-            internal const ushort SUPPORTED_MINOR_VERSION = 5;
+            internal const ushort SUPPORTED_MINOR_VERSION = 6;
         } // class Constants
     } // namespace V1
 } // namespace ESP32SimWheel

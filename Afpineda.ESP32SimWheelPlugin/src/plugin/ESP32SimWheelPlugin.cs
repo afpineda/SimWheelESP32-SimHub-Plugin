@@ -75,31 +75,28 @@ namespace Afpineda.ESP32SimWheelPlugin
         /// <param name="data">Current game data, including current and previous data frame.</param>
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
-            if (data.GamePaused && !_gamePaused)
-                _refreshDeviceList = true;
-            _gamePaused = data.GamePaused;
+            try
+            {
+                if (data.GamePaused && !_gamePaused)
+                    _refreshDeviceList = true;
+                _gamePaused = data.GamePaused;
 
-            UpdateDeviceListWhenNeeded();
-            MonitorBindingsEnabling();
-            MonitorGameAndCar(ref data);
-            SendTelemetryData(ref data);
-            MonitorRefreshLedsDriverRequest();
-            MonitorSaveRequest();
+                MonitorBindingsEnabling();
+                MonitorGameAndCar(ref data);
+                UpdateDeviceListWhenNeeded();
+                SendTelemetryData(ref data);
+                SendPixelData(ref data, pluginManager);
+                MonitorSaveRequest();
+            }
+            catch (Exception ex)
+            {
+                SimHub.Logging.Current.InfoFormat("[ESP32 Sim-wheel] Refreshing due to {0}", ex.ToString());
+                _refreshDeviceList = true;
+            }
         }
 
         public void UpdateDeviceListWhenNeeded()
         {
-            // Look for disconnected devices
-            foreach (var device in _devices)
-                if (!device.IsAlive)
-                {
-                    SimHub.Logging.Current.InfoFormat(
-                        "[ESP32 Sim-wheel] Disconnected: {0}",
-                        device.HidInfo.DisplayName);
-                    _refreshDeviceList = true;
-                }
-
-            // Rebuild device list when needed
             if (_refreshDeviceList)
             {
                 SimHub.Logging.Current.Info("[ESP32 Sim-wheel] Refreshing device list");
@@ -114,8 +111,10 @@ namespace Afpineda.ESP32SimWheelPlugin
                 {
                     count++;
                     SimHub.Logging.Current.InfoFormat(
-                            "[ESP32 Sim-wheel] Found: '{0}'",
-                            device.HidInfo.DisplayName);
+                            "[ESP32 Sim-wheel] Found: '{0}' (data version {1}.{2})",
+                            device.HidInfo.DisplayName,
+                            device.DataVersion.Major,
+                            device.DataVersion.Minor);
                     if (IsNewDevice(device.UniqueID))
                         Settings.ApplyTo(device);
                 }
@@ -135,6 +134,20 @@ namespace Afpineda.ESP32SimWheelPlugin
                         _refreshDeviceList = true;
         }
 
+        private void SendPixelData(ref GameData data, PluginManager manager)
+        {
+            ulong reload = _reloadLedsDriverRequest;
+            if (reload != 0)
+                foreach (var device in _devices)
+                    if (device.UniqueID == reload)
+                        device.Pixels?.ReloadLedsDriver();
+
+            foreach (var device in _devices)
+                if ((device.Pixels != null) && !device.Pixels.RenderPixels(ref data, manager))
+                    _refreshDeviceList = true;
+            if (reload != 0)
+                _reloadLedsDriverRequest = 0;
+        }
 
         private void MonitorBindingsEnabling()
         {
@@ -158,6 +171,8 @@ namespace Afpineda.ESP32SimWheelPlugin
                 {
                     // Game or car has changed
                     ApplySettingsToAllDevices();
+                    // Notify UI
+                    // _mainControl.Dispatcher.Invoke(() => _mainControl.OnGameCarChange(currentGame, currentCar));
                 }
             }
         }
@@ -168,18 +183,6 @@ namespace Afpineda.ESP32SimWheelPlugin
             {
                 SaveSettingsFromAllDevices();
                 _saveRequest = false;
-            }
-        }
-
-        private void MonitorRefreshLedsDriverRequest()
-        {
-            ulong reload = _reloadLedsDriverRequest;
-            _reloadLedsDriverRequest = 0;
-            if (reload != 0)
-            {
-                foreach (var device in _devices)
-                    if (device.UniqueID == reload)
-                        device.Pixels?.ReloadLedsDriver();
             }
         }
 
@@ -267,7 +270,7 @@ namespace Afpineda.ESP32SimWheelPlugin
         private bool IsNewDevice(ulong deviceID)
         {
             foreach (var device in _devices)
-                if ((device != null) && (device.UniqueID == deviceID))
+                if (device.UniqueID == deviceID)
                     return false;
             return true;
         }
@@ -288,7 +291,14 @@ namespace Afpineda.ESP32SimWheelPlugin
         private void SaveSettingsFromAllDevices()
         {
             foreach (var device in _devices)
-                Settings.SaveFrom(device);
+                try
+                {
+                    Settings.SaveFrom(device);
+                }
+                catch
+                {
+                    _refreshDeviceList = true;
+                }
             this.SaveCommonSettings<CustomSettings>("GeneralSettings", Settings);
         }
 

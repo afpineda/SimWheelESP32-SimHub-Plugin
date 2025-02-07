@@ -177,9 +177,10 @@ namespace ESP32SimWheel
 
     public interface IPixelControl
     {
-        bool SetPixel(PixelGroups group, byte pixelIndex, Color pixelData);
-        bool ShowPixelsNow();
-        bool ResetPixels();
+        void SetPixels(PixelGroups group, Color[] pixelData);
+        void ShowPixelsNow();
+        void ResetPixels();
+        bool RenderPixels(ref GameData data, PluginManager manager);
         void ReloadLedsDriver();
     }
 
@@ -198,6 +199,5 @@ namespace ESP32SimWheel
         IPixelControl Pixels { get; }
         ulong UniqueID { get; }
         bool Refresh();
-        bool IsAlive { get; }
     }
 }

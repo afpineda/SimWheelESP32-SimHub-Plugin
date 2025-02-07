@@ -61,14 +61,11 @@ namespace ESP32SimWheel
                     if (!Enumerable.SequenceEqual<byte>(newReport3, _report3))
                         changed = true;
                     _report3 = newReport3;
-                    IsAlive = true;
                     return changed;
                 }
-                IsAlive = false;
-                return true;
+                ThrowIOException();
+                return false;
             }
-
-            public bool IsAlive { get; private set; } = false;
 
             // --------------------------------------------------------
             // IDPAD implementation
@@ -88,7 +85,8 @@ namespace ESP32SimWheel
                     {
                         byte[] newReport3 = NewReport3(_dataVersion.Minor);
                         newReport3[5] = (byte)value;
-                        IsAlive = hidDevice.WriteFeatureData(newReport3);
+                        if (!hidDevice.WriteFeatureData(newReport3))
+                            ThrowIOException();
                     }
                 }
             }
@@ -110,7 +108,8 @@ namespace ESP32SimWheel
                 {
                     byte[] newReport3 = NewReport3(_dataVersion.Minor);
                     newReport3[2] = (byte)value;
-                    IsAlive = hidDevice.WriteFeatureData(newReport3);
+                    if (!hidDevice.WriteFeatureData(newReport3))
+                        ThrowIOException();
                 }
             }
 
@@ -159,7 +158,8 @@ namespace ESP32SimWheel
                 {
                     byte[] newReport3 = NewReport3(_dataVersion.Minor);
                     newReport3[1] = (byte)value;
-                    IsAlive = hidDevice.WriteFeatureData(newReport3);
+                    if (!hidDevice.WriteFeatureData(newReport3))
+                        ThrowIOException();
                 }
             }
 
@@ -172,7 +172,8 @@ namespace ESP32SimWheel
                     {
                         byte[] newReport3 = NewReport3(_dataVersion.Minor);
                         newReport3[3] = value;
-                        IsAlive = hidDevice.WriteFeatureData(newReport3);
+                        if (!hidDevice.WriteFeatureData(newReport3))
+                            ThrowIOException();
                     }
                 }
             }
