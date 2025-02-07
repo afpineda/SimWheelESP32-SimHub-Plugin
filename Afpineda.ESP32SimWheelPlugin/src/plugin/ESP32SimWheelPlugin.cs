@@ -75,28 +75,30 @@ namespace Afpineda.ESP32SimWheelPlugin
         /// <param name="data">Current game data, including current and previous data frame.</param>
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
-            try
-            {
-                if (data.GamePaused && !_gamePaused)
-                    _refreshDeviceList = true;
-                _gamePaused = data.GamePaused;
-
-                MonitorBindingsEnabling();
-                MonitorGameAndCar(ref data);
-                UpdateDeviceListWhenNeeded();
-                SendTelemetryData(ref data);
-                SendPixelData(ref data, pluginManager);
-                MonitorSaveRequest();
-            }
-            catch (Exception ex)
-            {
-                SimHub.Logging.Current.InfoFormat("[ESP32 Sim-wheel] Refreshing due to {0}", ex.ToString());
+            if (data.GamePaused && !_gamePaused)
                 _refreshDeviceList = true;
-            }
+            _gamePaused = data.GamePaused;
+
+            UpdateDeviceListWhenNeeded();
+            MonitorBindingsEnabling();
+            MonitorGameAndCar(ref data);
+            SendTelemetryData(ref data);
+            SendPixelData(ref data, pluginManager);
+            MonitorSaveRequest();
         }
 
         public void UpdateDeviceListWhenNeeded()
         {
+            if (!_refreshDeviceList)
+                foreach (var device in _devices)
+                    if (!device.IsOpen)
+                    {
+                        SimHub.Logging.Current.InfoFormat(
+                           "[ESP32 Sim-wheel] Disconnected: '{0}'",
+                           device.HidInfo.DisplayName);
+                        _refreshDeviceList = true;
+                        break;
+                    }
             if (_refreshDeviceList)
             {
                 SimHub.Logging.Current.Info("[ESP32 Sim-wheel] Refreshing device list");
@@ -129,9 +131,7 @@ namespace Afpineda.ESP32SimWheelPlugin
         {
             if ((data.GameRunning) && (data.NewData != null))
                 foreach (var device in _devices)
-                    if ((device.TelemetryData != null) &&
-                        !device.TelemetryData.SendTelemetry(ref data))
-                        _refreshDeviceList = true;
+                    device.TelemetryData?.SendTelemetry(ref data);
         }
 
         private void SendPixelData(ref GameData data, PluginManager manager)
@@ -141,10 +141,8 @@ namespace Afpineda.ESP32SimWheelPlugin
                 foreach (var device in _devices)
                     if (device.UniqueID == reload)
                         device.Pixels?.ReloadLedsDriver();
-
             foreach (var device in _devices)
-                if ((device.Pixels != null) && !device.Pixels.RenderPixels(ref data, manager))
-                    _refreshDeviceList = true;
+                device.Pixels?.RenderPixels(ref data, manager);
             if (reload != 0)
                 _reloadLedsDriverRequest = 0;
         }
@@ -278,41 +276,20 @@ namespace Afpineda.ESP32SimWheelPlugin
         private void ApplySettingsToAllDevices()
         {
             foreach (var device in _devices)
-                try
-                {
-                    Settings.ApplyTo(device);
-                }
-                catch
-                {
-                    _refreshDeviceList = true;
-                }
+                Settings.ApplyTo(device);
         }
 
         private void SaveSettingsFromAllDevices()
         {
             foreach (var device in _devices)
-                try
-                {
-                    Settings.SaveFrom(device);
-                }
-                catch
-                {
-                    _refreshDeviceList = true;
-                }
+                Settings.SaveFrom(device);
             this.SaveCommonSettings<CustomSettings>("GeneralSettings", Settings);
         }
 
         private void ResetAllPixels()
         {
             foreach (var device in _devices)
-                try
-                {
-                    device.Pixels?.ResetPixels();
-                }
-                catch
-                {
-                    // Do nothing since we are quitting
-                }
+                device.Pixels?.ResetPixels();
         }
 
         // --------------------------------------------------------

@@ -27,44 +27,38 @@ namespace ESP32SimWheel
 
             public long MillisecondsPerTelemetryFrame => _millisecondsPerFrame;
 
-            public bool SendTelemetry(ref GameData data)
+            public void SendTelemetry(ref GameData data)
             {
                 if ((_millisecondsPerFrame > 0) &&
                     (!_telemetryTimer.IsRunning || (_telemetryTimer.ElapsedMilliseconds >= _millisecondsPerFrame)))
-                    try
                     {
                         _telemetryTimer.Stop();
                         if (_capabilities.UsesPowertrainTelemetry)
                         {
                             BuildPowertrainReport(ref data.NewData);
                             if (!hidDevice.Write(_powertrainReport))
-                                return false;
+                                hidDevice.CloseDevice();
                         }
                         if (_capabilities.UsesEcuTelemetry)
                         {
                             BuildEcuReport(ref data.NewData);
                             if (!hidDevice.Write(_ecuReport))
-                                return false;
+                                hidDevice.CloseDevice();
                         }
                         if (_capabilities.UsesRaceControlTelemetry)
                         {
                             BuildRaceControlReport(ref data.NewData);
                             if (!hidDevice.Write(_raceControlReport))
-                                return false;
+                                hidDevice.CloseDevice();
                         }
                         if (_capabilities.UsesGaugesTelemetry)
                         {
                             BuildGaugesReport(ref data.NewData);
                             if (!hidDevice.Write(_gaugesReport))
-                                return false;
+                                hidDevice.CloseDevice();
                         }
                         _telemetryTimer.Restart();
                     }
-                    catch (Exception)
-                    {
-                        return false;
-                    }
-                return true;
             }
 
             // --------------------------------------------------------

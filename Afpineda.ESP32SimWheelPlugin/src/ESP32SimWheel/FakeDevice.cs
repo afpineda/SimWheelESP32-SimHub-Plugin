@@ -198,12 +198,11 @@ namespace ESP32SimWheel
             }
         }
 
-        public bool SendTelemetry(ref GameData data)
+        public void SendTelemetry(ref GameData data)
         {
             SimHub.Logging.Current.InfoFormat(
                 "[FakeDeviceESP32] [{0}] SendTelemetry()",
                 _hidInfo.DisplayName);
-            return true;
         }
 
         // --------------------------------------------------------
@@ -278,7 +277,7 @@ namespace ESP32SimWheel
             // Do nothing
         }
 
-        public bool RenderPixels(ref GameData data, PluginManager manager)
+        public void RenderPixels(ref GameData data, PluginManager manager)
         {
             foreach (PixelGroups group in Enum.GetValues(typeof(PixelGroups)))
                 if (_rgbLedsDriver[(int)group] != null)
@@ -287,7 +286,6 @@ namespace ESP32SimWheel
                     SetPixels(group, _rgbLedsDriver[(int)group].GetResult());
                 }
             ShowPixelsNow();
-            return true;
         }
 
         public void ReloadLedsDriver()
@@ -339,6 +337,8 @@ namespace ESP32SimWheel
             _device.Refresh();
             return _updated;
         }
+
+        public bool IsOpen => true;
 
         // --------------------------------------------------------
         // Constructor

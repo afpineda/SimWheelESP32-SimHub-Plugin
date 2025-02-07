@@ -63,9 +63,12 @@ namespace ESP32SimWheel
                     _report3 = newReport3;
                     return changed;
                 }
-                ThrowIOException();
-                return false;
+                else
+                    hidDevice.CloseDevice();
+                return true;
             }
+
+            public bool IsOpen => hidDevice.IsOpen;
 
             // --------------------------------------------------------
             // IDPAD implementation
@@ -86,7 +89,7 @@ namespace ESP32SimWheel
                         byte[] newReport3 = NewReport3(_dataVersion.Minor);
                         newReport3[5] = (byte)value;
                         if (!hidDevice.WriteFeatureData(newReport3))
-                            ThrowIOException();
+                            hidDevice.CloseDevice();
                     }
                 }
             }
@@ -109,7 +112,7 @@ namespace ESP32SimWheel
                     byte[] newReport3 = NewReport3(_dataVersion.Minor);
                     newReport3[2] = (byte)value;
                     if (!hidDevice.WriteFeatureData(newReport3))
-                        ThrowIOException();
+                        hidDevice.CloseDevice();
                 }
             }
 
@@ -159,7 +162,7 @@ namespace ESP32SimWheel
                     byte[] newReport3 = NewReport3(_dataVersion.Minor);
                     newReport3[1] = (byte)value;
                     if (!hidDevice.WriteFeatureData(newReport3))
-                        ThrowIOException();
+                        hidDevice.CloseDevice();
                 }
             }
 
@@ -173,7 +176,7 @@ namespace ESP32SimWheel
                         byte[] newReport3 = NewReport3(_dataVersion.Minor);
                         newReport3[3] = value;
                         if (!hidDevice.WriteFeatureData(newReport3))
-                            ThrowIOException();
+                            hidDevice.CloseDevice();
                     }
                 }
             }
@@ -290,7 +293,7 @@ namespace ESP32SimWheel
                     }
                     return featureReport;
                 }
-                ThrowIOException();
+                hidDevice.CloseDevice();
                 return null;
             }
 
@@ -366,11 +369,6 @@ namespace ESP32SimWheel
                 byte[] report = Enumerable.Repeat<byte>(0xFF, GetReport3Size(minorVersion)).ToArray();
                 report[0] = 3;
                 return report;
-            }
-
-            private static void ThrowIOException()
-            {
-                throw new IOException("Hid device not available");
             }
 
             // --------------------------------------------------------

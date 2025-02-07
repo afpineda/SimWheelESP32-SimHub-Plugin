@@ -166,7 +166,7 @@ namespace ESP32SimWheel
     public interface ITelemetryData
     {
         long MillisecondsPerTelemetryFrame { get; }
-        bool SendTelemetry(ref GameData data);
+        void SendTelemetry(ref GameData data);
     }
 
     public interface IBattery
@@ -180,7 +180,7 @@ namespace ESP32SimWheel
         void SetPixels(PixelGroups group, Color[] pixelData);
         void ShowPixelsNow();
         void ResetPixels();
-        bool RenderPixels(ref GameData data, PluginManager manager);
+        void RenderPixels(ref GameData data, PluginManager manager);
         void ReloadLedsDriver();
     }
 
@@ -199,5 +199,6 @@ namespace ESP32SimWheel
         IPixelControl Pixels { get; }
         ulong UniqueID { get; }
         bool Refresh();
+        bool IsOpen { get; }
     }
 }

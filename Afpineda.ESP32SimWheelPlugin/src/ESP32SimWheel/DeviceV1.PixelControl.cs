@@ -48,7 +48,7 @@ namespace ESP32SimWheel
                         _report30[5] = pixelData[index].R;
                         _report30[6] = 0;
                         if (!hidDevice.Write(_report30))
-                            ThrowIOException();
+                            hidDevice.CloseDevice();
                     }
                 }
             }
@@ -62,7 +62,7 @@ namespace ESP32SimWheel
 
                     // NOTE: HUGE PERFORMACE PROBLEM HERE !!!
                     if (!hidDevice.WriteFeatureData(report3))
-                        ThrowIOException();
+                        hidDevice.CloseDevice();
                 }
                 else
                 {
@@ -74,7 +74,7 @@ namespace ESP32SimWheel
                     _report30[5] = 0xFF;
                     _report30[6] = 0xFF;
                     if (!hidDevice.Write(_report30))
-                        ThrowIOException();
+                        hidDevice.CloseDevice();
                 }
             }
 
@@ -85,7 +85,7 @@ namespace ESP32SimWheel
                     byte[] report3 = NewReport3(_dataVersion.Minor);
                     report3[4] = Constants.CMD_RESET_PIXELS;
                     if (!hidDevice.WriteFeatureData(report3))
-                        ThrowIOException();
+                        hidDevice.CloseDevice();
                 }
                 else
                 {
@@ -97,27 +97,19 @@ namespace ESP32SimWheel
                     _report30[5] = 0xFF;
                     _report30[6] = 0xFF;
                     if (!hidDevice.Write(_report30))
-                        ThrowIOException();
+                        hidDevice.CloseDevice();
                 }
             }
 
-            public bool RenderPixels(ref GameData data, PluginManager manager)
+            public void RenderPixels(ref GameData data, PluginManager manager)
             {
-                try
-                {
-                    foreach (PixelGroups group in Enum.GetValues(typeof(PixelGroups)))
-                        if (_rgbLedsDriver[(int)group] != null)
-                        {
-                            _rgbLedsDriver[(int)group].UpdateData(ref data, manager);
-                            SetPixels(group, _rgbLedsDriver[(int)group].GetResult());
-                        }
-                    ShowPixelsNow();
-                }
-                catch (IOException)
-                {
-                    return false;
-                }
-                return true;
+                foreach (PixelGroups group in Enum.GetValues(typeof(PixelGroups)))
+                    if (_rgbLedsDriver[(int)group] != null)
+                    {
+                        _rgbLedsDriver[(int)group].UpdateData(ref data, manager);
+                        SetPixels(group, _rgbLedsDriver[(int)group].GetResult());
+                    }
+                ShowPixelsNow();
             }
 
             // --------------------------------------------------------
