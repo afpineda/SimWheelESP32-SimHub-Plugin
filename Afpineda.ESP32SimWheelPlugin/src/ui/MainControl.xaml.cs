@@ -48,12 +48,12 @@ namespace Afpineda.ESP32SimWheelPlugin
             // Initialization
             this.Plugin = plugin;
             CreateBindings();
-            RefreshButton_click(this, null);
+            // RefreshDeviceList();
 
             // Timer to poll selected device
-            _updateTimer = new DispatcherTimer();
-            _updateTimer.Tick += new EventHandler(OnTimer);
-            _updateTimer.Interval = TimeSpan.FromMilliseconds(POLLING_INTERVAL_MS);
+            // _updateTimer = new DispatcherTimer();
+            // _updateTimer.Tick += new EventHandler(OnTimer);
+            // _updateTimer.Interval = TimeSpan.FromMilliseconds(POLLING_INTERVAL_MS);
             // The timer will be started when this control becomes visible
             IsVisibleChanged += OnVisibilityChange;
         }
@@ -112,21 +112,10 @@ namespace Afpineda.ESP32SimWheelPlugin
         // Automatic UI update from device status
         // --------------------------------------------------------
 
-        private void OnTimer(object sender, EventArgs e)
+        public void UpdateUIFromDeviceState()
         {
-            // if a device is selected, read device state and
-            // update UI elements only if there are changes
-            if (SelectedDevice != null)
-            {
-                if (!SelectedDevice.IsOpen)
-                    RefreshButton_click(null, null);
-                else if (SelectedDevice.Refresh())
-                    UpdateUIFromDeviceState();
-            }
-        }
-
-        private void UpdateUIFromDeviceState()
-        {
+            // Invoked from the plugin thread at timed intervals
+            // Invoked from the UI thread when SelectDevice changes
             if (SelectedDevice != null)
             {
                 _updating = true;
@@ -137,6 +126,40 @@ namespace Afpineda.ESP32SimWheelPlugin
                 UpdateUIFromAltButtons(SelectedDevice.AltButtons);
                 _updating = false;
             }
+        }
+
+        public void RefreshDeviceList()
+        {
+            // Invoked from the plugin thread when required
+            SimHub.Logging.Current.Info("[ESP32 Sim-wheel] [UI] Refreshing device list");
+
+            // Remember current device selection
+            ESP32SimWheel.IDevice currentDevice = SelectedDevice;
+            ESP32SimWheel.IDevice autoSelection = null;
+
+            // Recreate device list
+            AvailableDevices.Clear();
+            foreach (var device in Devices.Enumerate())
+            {
+                AvailableDevices.Add(device);
+                if ((currentDevice != null) && (currentDevice.UniqueID == device.UniqueID))
+                    autoSelection = device;
+            }
+
+            // Trick to force UI update
+            SelectDeviceCombo.ItemsSource = null;
+            SelectDeviceCombo.ItemsSource = AvailableDevices;
+
+            // Restore previous device selection, if any
+            if (autoSelection != null)
+                SelectDeviceCombo.SelectedItem = autoSelection;
+            else if (SelectDeviceCombo.Items.Count > 0)
+                // Or select the first available device, if any
+                SelectDeviceCombo.SelectedIndex = 0;
+            else
+                // Disable user interface, since there are no devices
+                OnSelectDevice(null, null);
+            SelectDeviceCombo.IsEnabled = (SelectDeviceCombo.Items.Count > 0);
         }
 
         private void UpdateUIFromSecurityLockState(ESP32SimWheel.ISecurityLock sLock)
@@ -212,10 +235,10 @@ namespace Afpineda.ESP32SimWheelPlugin
             if (visible)
             {
                 BindToGameCarCheckbox.IsChecked = Plugin.Settings.BindToGameAndCar;
-                _updateTimer.Start();
+                // _updateTimer.Start();
             }
-            else
-                _updateTimer.Stop();
+            // else
+            //     _updateTimer.Stop();
         }
 
         private void OnSelectDevice(object sender, SelectionChangedEventArgs args)
@@ -289,34 +312,6 @@ namespace Afpineda.ESP32SimWheelPlugin
         private void RefreshButton_click(object sender, System.Windows.RoutedEventArgs e)
         {
             Plugin.Refresh();
-
-            // Remember current device selection
-            ESP32SimWheel.IDevice currentDevice = SelectedDevice;
-            ESP32SimWheel.IDevice autoSelection = null;
-
-            // Recreate device list
-            AvailableDevices.Clear();
-            foreach (var device in Devices.Enumerate())
-            {
-                AvailableDevices.Add(device);
-                if ((currentDevice != null) && (currentDevice.UniqueID == device.UniqueID))
-                    autoSelection = device;
-            }
-
-            // Trick to force UI update
-            SelectDeviceCombo.ItemsSource = null;
-            SelectDeviceCombo.ItemsSource = AvailableDevices;
-
-            // Restore previous device selection, if any
-            if (autoSelection != null)
-                SelectDeviceCombo.SelectedItem = autoSelection;
-            else if (SelectDeviceCombo.Items.Count > 0)
-                // Or select the first available device, if any
-                SelectDeviceCombo.SelectedIndex = 0;
-            else
-                // Disable user interface, since there are no devices
-                OnSelectDevice(null, null);
-            SelectDeviceCombo.IsEnabled = (SelectDeviceCombo.Items.Count > 0);
         }
 
         private void SaveButton_click(object sender, System.Windows.RoutedEventArgs e)
@@ -461,6 +456,7 @@ namespace Afpineda.ESP32SimWheelPlugin
         // Auxiliary methods
         // --------------------------------------------------------
 
+
         // Show or hide tab pages
         private void TabVisible(SimHub.Plugins.Styles.SHTabItem tabPage, bool visible)
         {
@@ -527,7 +523,7 @@ namespace Afpineda.ESP32SimWheelPlugin
         // --------------------------------------------------------
 
         private bool _updating = false;
-        private readonly DispatcherTimer _updateTimer;
+        // private readonly DispatcherTimer _updateTimer;
 
         private ESP32SimWheel.IDevice SelectedDevice
         {
@@ -536,10 +532,9 @@ namespace Afpineda.ESP32SimWheelPlugin
 
         private readonly List<ESP32SimWheel.IDevice> AvailableDevices = new List<ESP32SimWheel.IDevice>();
         public ESP32SimWheelPlugin Plugin { get; }
-        private const int POLLING_INTERVAL_MS = 250;
+        // private const int POLLING_INTERVAL_MS = 250;
 
         private readonly RGBLedsDriver[] _rgbLedsDriver = new RGBLedsDriver[3];
-
 
     } // classMainControl
 } //namespace Afpineda.ESP32SimWheelPlugin

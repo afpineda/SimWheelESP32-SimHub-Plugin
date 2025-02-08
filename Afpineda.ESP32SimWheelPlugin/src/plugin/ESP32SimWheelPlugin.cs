@@ -84,25 +84,38 @@ namespace Afpineda.ESP32SimWheelPlugin
             MonitorGameAndCar(ref data);
             SendTelemetryData(ref data);
             SendPixelData(ref data, pluginManager);
+            PluginManager.WatchDogRefresh();
             MonitorSaveRequest();
+            UITicker();
+        }
+
+        private void UITicker()
+        {
+            TimeSpan timeSpan = DateTime.UtcNow - _lastTick;
+            if (timeSpan.TotalMilliseconds > TICK_RATE_MS)
+            {
+                _lastTick = DateTime.UtcNow;
+                _mainControl.Dispatcher.Invoke(() => _mainControl.UpdateUIFromDeviceState());
+            }
         }
 
         public void UpdateDeviceListWhenNeeded()
         {
-            if (!_refreshDeviceList)
+            bool forceRefresh = _refreshDeviceList;
+            _refreshDeviceList = false;
+            if (!forceRefresh)
                 foreach (var device in _devices)
                     if (!device.IsOpen)
                     {
                         SimHub.Logging.Current.InfoFormat(
                            "[ESP32 Sim-wheel] Disconnected: '{0}'",
                            device.HidInfo.DisplayName);
-                        _refreshDeviceList = true;
+                        forceRefresh = true;
                         break;
                     }
-            if (_refreshDeviceList)
+            if (forceRefresh)
             {
                 SimHub.Logging.Current.Info("[ESP32 Sim-wheel] Refreshing device list");
-                _refreshDeviceList = false;
 
                 // Obtain a new list of available devices
                 ESP32SimWheel.IDevice[] newDevices =
@@ -124,6 +137,7 @@ namespace Afpineda.ESP32SimWheelPlugin
                     "[ESP32 Sim-wheel] Refresh: {0} devices found",
                     count);
                 _devices = newDevices;
+                _mainControl.Dispatcher.Invoke(() => _mainControl.RefreshDeviceList());
             }
         }
 
@@ -137,14 +151,13 @@ namespace Afpineda.ESP32SimWheelPlugin
         private void SendPixelData(ref GameData data, PluginManager manager)
         {
             ulong reload = _reloadLedsDriverRequest;
+            _reloadLedsDriverRequest = 0;
             if (reload != 0)
                 foreach (var device in _devices)
                     if (device.UniqueID == reload)
                         device.Pixels?.ReloadLedsDriver();
             foreach (var device in _devices)
                 device.Pixels?.RenderPixels(ref data, manager);
-            if (reload != 0)
-                _reloadLedsDriverRequest = 0;
         }
 
         private void MonitorBindingsEnabling()
@@ -300,9 +313,11 @@ namespace Afpineda.ESP32SimWheelPlugin
 
         private ESP32SimWheel.IDevice[] _devices = new ESP32SimWheel.IDevice[0];
         private MainControl _mainControl = null;
+        private DateTime _lastTick = DateTime.MinValue;
         private bool _gamePaused = false;
         private bool _bindingsEnabledEvent = false;
         private bool _saveRequest = false;
         private ulong _reloadLedsDriverRequest = 0;
+        private const double TICK_RATE_MS = 300;
     }
 }
