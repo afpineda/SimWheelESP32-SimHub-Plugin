@@ -105,3 +105,12 @@ LED profiles are stored in the
 `PluginsData\Common\ESP32SimWheelPlugin\`
 folder relative to your installation folder.
 Files are named by serial number: one file per device and LED group.
+
+## Known issues
+
+### Low frame rate (FPS)
+
+Firmware versions up to and including 6.11.2,
+and plugin versions up to and including 2.4.0
+will show very low performance with pixel control/telemetry data.
+Please upgrade to the latest versions.
