@@ -79,14 +79,21 @@ namespace Afpineda.ESP32SimWheelPlugin
                 _refreshDeviceList = true;
             _gamePaused = data.GamePaused;
 
-            UpdateDeviceListWhenNeeded();
-            MonitorBindingsEnabling();
-            MonitorGameAndCar(ref data);
-            SendTelemetryData(ref data);
-            SendPixelData(ref data, pluginManager);
-            PluginManager.WatchDogRefresh();
-            MonitorSaveRequest();
-            UITicker();
+            // FPS limmitation is absolutely required.
+            // Otherwise the underlying HID API will run into performance
+            // problems, thus triggering the SimHub watchdog timer.
+            TimeSpan timeSpan = DateTime.UtcNow - _lastFrameTimeStamp;
+            if (timeSpan.TotalMilliseconds > OUTPUT_RATE_MS)
+            {
+                _lastFrameTimeStamp = DateTime.UtcNow;
+                UpdateDeviceListWhenNeeded();
+                MonitorBindingsEnabling();
+                MonitorGameAndCar(ref data);
+                SendTelemetryData(ref data);
+                SendPixelData(ref data, pluginManager);
+                MonitorSaveRequest();
+                UITicker();
+            }
         }
 
         private void UITicker()
@@ -314,10 +321,12 @@ namespace Afpineda.ESP32SimWheelPlugin
         private ESP32SimWheel.IDevice[] _devices = new ESP32SimWheel.IDevice[0];
         private MainControl _mainControl = null;
         private DateTime _lastTick = DateTime.MinValue;
+        private DateTime _lastFrameTimeStamp = DateTime.MinValue;
         private bool _gamePaused = false;
         private bool _bindingsEnabledEvent = false;
         private bool _saveRequest = false;
         private ulong _reloadLedsDriverRequest = 0;
-        private const double TICK_RATE_MS = 300;
+        private const double TICK_RATE_MS = 300; // 3 FPS for UI
+        private const double OUTPUT_RATE_MS = 20; // 50 FPS for telemetry/pixel control
     }
 }

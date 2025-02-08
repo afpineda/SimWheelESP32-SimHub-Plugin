@@ -48,13 +48,6 @@ namespace Afpineda.ESP32SimWheelPlugin
             // Initialization
             this.Plugin = plugin;
             CreateBindings();
-            // RefreshDeviceList();
-
-            // Timer to poll selected device
-            // _updateTimer = new DispatcherTimer();
-            // _updateTimer.Tick += new EventHandler(OnTimer);
-            // _updateTimer.Interval = TimeSpan.FromMilliseconds(POLLING_INTERVAL_MS);
-            // The timer will be started when this control becomes visible
             IsVisibleChanged += OnVisibilityChange;
         }
 
@@ -118,6 +111,7 @@ namespace Afpineda.ESP32SimWheelPlugin
             // Invoked from the UI thread when SelectDevice changes
             if (SelectedDevice != null)
             {
+                SelectedDevice.Refresh();
                 _updating = true;
                 UpdateUIFromBatteryState(SelectedDevice.Battery);
                 UpdateUIFromClutchState(SelectedDevice.Clutch);
@@ -235,10 +229,7 @@ namespace Afpineda.ESP32SimWheelPlugin
             if (visible)
             {
                 BindToGameCarCheckbox.IsChecked = Plugin.Settings.BindToGameAndCar;
-                // _updateTimer.Start();
             }
-            // else
-            //     _updateTimer.Stop();
         }
 
         private void OnSelectDevice(object sender, SelectionChangedEventArgs args)
@@ -284,7 +275,6 @@ namespace Afpineda.ESP32SimWheelPlugin
 
                 // Read device state and update dynamic UI elements
                 UpdateLedsDrivers();
-                SelectedDevice.Refresh();
                 UpdateUIFromDeviceState();
             }
             else
