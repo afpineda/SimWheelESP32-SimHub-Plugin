@@ -75,6 +75,8 @@ namespace Afpineda.ESP32SimWheelPlugin
         /// <param name="data">Current game data, including current and previous data frame.</param>
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
+            TimeSpan currentFrameTime;
+
             if (data.GamePaused && !_gamePaused)
                 _refreshDeviceList = true;
             _gamePaused = data.GamePaused;
@@ -92,9 +94,27 @@ namespace Afpineda.ESP32SimWheelPlugin
                 SendTelemetryData(ref data);
                 SendPixelData(ref data, pluginManager);
                 MonitorSaveRequest();
-                UITicker();
+                currentFrameTime = DateTime.UtcNow - _lastFrameTimeStamp;
+                computeMean(
+                    currentFrameTime.TotalMilliseconds,
+                    ref frameTimeSamples,
+                    ref meanFrameTime);
+
+                if (frameTimeSamples >= 500)
+                {
+                    SimHub.Logging.Current.InfoFormat(
+                        "[ESP32 Sim-wheel] Mean processing time (500 samples): '{0} ms / {1} potential FPS'",
+                        meanFrameTime,
+                        (meanFrameTime > 0) ? (1000 / meanFrameTime) : 0);
+                    frameTimeSamples = 0;
+                    meanFrameTime = 0;
+                }
             }
+            UITicker();
         }
+
+        // --------------------------------------------------------
+        // --------------------------------------------------------
 
         private void UITicker()
         {
@@ -275,6 +295,9 @@ namespace Afpineda.ESP32SimWheelPlugin
             _reloadLedsDriverRequest = deviceID;
         }
 
+        // public uint FPS { get ; private set; }
+
+
         // --------------------------------------------------------
         // Auxiliary methods
         // --------------------------------------------------------
@@ -312,6 +335,7 @@ namespace Afpineda.ESP32SimWheelPlugin
                 device.Pixels?.ResetPixels();
         }
 
+
         // --------------------------------------------------------
         // Private Fields and properties
         // --------------------------------------------------------
@@ -328,5 +352,16 @@ namespace Afpineda.ESP32SimWheelPlugin
         private ulong _reloadLedsDriverRequest = 0;
         private const double TICK_RATE_MS = 300; // 3 FPS for UI
         private const double OUTPUT_RATE_MS = 20; // 50 FPS for telemetry/pixel control
+
+        private double meanFrameTime = 0;
+        private double frameTimeSamples = 0;
+
+        private void computeMean(double sample, ref double count, ref double mean)
+        {
+            double oldDelta;
+            count++;
+            oldDelta = sample - mean;
+            mean += (oldDelta / count);
+        }
     }
 }
