@@ -36,26 +36,22 @@ namespace ESP32SimWheel
                         if (_capabilities.UsesPowertrainTelemetry)
                         {
                             BuildPowertrainReport(ref data.NewData);
-                            if (!hidDevice.Write(_powertrainReport))
-                                hidDevice.CloseDevice();
+                            _hidDevice.Write(_powertrainReport);
                         }
                         if (_capabilities.UsesEcuTelemetry)
                         {
                             BuildEcuReport(ref data.NewData);
-                            if (!hidDevice.Write(_ecuReport))
-                                hidDevice.CloseDevice();
+                            _hidDevice.Write(_ecuReport);
                         }
                         if (_capabilities.UsesRaceControlTelemetry)
                         {
                             BuildRaceControlReport(ref data.NewData);
-                            if (!hidDevice.Write(_raceControlReport))
-                                hidDevice.CloseDevice();
+                            _hidDevice.Write(_raceControlReport);
                         }
                         if (_capabilities.UsesGaugesTelemetry)
                         {
                             BuildGaugesReport(ref data.NewData);
-                            if (!hidDevice.Write(_gaugesReport))
-                                hidDevice.CloseDevice();
+                            _hidDevice.Write(_gaugesReport);
                         }
                         _telemetryTimer.Restart();
                     }

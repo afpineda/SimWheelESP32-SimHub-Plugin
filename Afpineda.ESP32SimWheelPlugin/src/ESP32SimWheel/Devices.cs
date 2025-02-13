@@ -29,7 +29,9 @@ namespace ESP32SimWheel
                 ESP32SimWheel.IDevice AsSimWheel = null;
                 try
                 {
-                    AsSimWheel = new ESP32SimWheel.V1.Device(hid);
+                    string path = hid.DevicePath;
+                    hid.CloseDevice();
+                    AsSimWheel = new ESP32SimWheel.V1.Device(path);
                 }
                 catch (Exception)
                 {

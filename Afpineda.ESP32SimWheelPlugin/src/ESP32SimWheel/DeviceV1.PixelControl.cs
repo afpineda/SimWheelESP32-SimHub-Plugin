@@ -11,10 +11,12 @@
 using System;
 using System.IO;
 using System.Drawing;
+using System.Runtime.InteropServices; // For GetLastError
 using SimHub.Plugins;
 using SimHub.Plugins.DataPlugins.RGBDriver;
 using Afpineda.ESP32SimWheelPlugin;
 using ESP32SimWheel;
+using ESP32SimWheel.HidAPI;
 using GameReaderCommon;
 
 namespace ESP32SimWheel
@@ -47,8 +49,7 @@ namespace ESP32SimWheel
                         _report30[4] = pixelData[index].G;
                         _report30[5] = pixelData[index].R;
                         _report30[6] = 0;
-                        if (!hidDevice.Write(_report30))
-                            hidDevice.CloseDevice();
+                        _hidDevice.Write(_report30);
                     }
                 }
             }
@@ -61,8 +62,7 @@ namespace ESP32SimWheel
                     report3[4] = Constants.CMD_SHOW_PIXELS;
 
                     // NOTE: HUGE PERFORMACE PROBLEM HERE !!!
-                    if (!hidDevice.WriteFeatureData(report3))
-                        hidDevice.CloseDevice();
+                    _hidDevice.SetFeature(report3);
                 }
                 else
                 {
@@ -73,8 +73,7 @@ namespace ESP32SimWheel
                     _report30[4] = 0xFF;
                     _report30[5] = 0xFF;
                     _report30[6] = 0xFF;
-                    if (!hidDevice.Write(_report30))
-                        hidDevice.CloseDevice();
+                    _hidDevice.Write(_report30);
                 }
             }
 
@@ -84,8 +83,7 @@ namespace ESP32SimWheel
                 {
                     byte[] report3 = NewReport3(_dataVersion.Minor);
                     report3[4] = Constants.CMD_RESET_PIXELS;
-                    if (!hidDevice.WriteFeatureData(report3))
-                        hidDevice.CloseDevice();
+                    _hidDevice.SetFeature(report3);
                 }
                 else
                 {
@@ -96,8 +94,7 @@ namespace ESP32SimWheel
                     _report30[4] = 0xFF;
                     _report30[5] = 0xFF;
                     _report30[6] = 0xFF;
-                    if (!hidDevice.Write(_report30))
-                        hidDevice.CloseDevice();
+                    _hidDevice.Write(_report30);
                 }
             }
 

@@ -12,7 +12,7 @@ using System.Text;
 using System.Linq;
 using System.IO;
 using System.Drawing;
-using HidLibrary;
+// using HidLibrary;
 using SimHub;
 
 namespace ESP32SimWheel
@@ -56,19 +56,17 @@ namespace ESP32SimWheel
                 bool changed = false;
                 byte[] newReport3;
 
-                if (hidDevice.ReadFeatureData(out newReport3, Constants.RID_FEATURE_CONFIG))
+                if (_hidDevice.GetFeature(Constants.RID_FEATURE_CONFIG, out newReport3))
                 {
                     if (!Enumerable.SequenceEqual<byte>(newReport3, _report3))
                         changed = true;
                     _report3 = newReport3;
                     return changed;
                 }
-                else
-                    hidDevice.CloseDevice();
                 return true;
             }
 
-            public bool IsOpen => hidDevice.IsOpen;
+            public bool IsOpen => _hidDevice.IsOpen;
 
             // --------------------------------------------------------
             // IDPAD implementation
@@ -88,8 +86,7 @@ namespace ESP32SimWheel
                     {
                         byte[] newReport3 = NewReport3(_dataVersion.Minor);
                         newReport3[5] = (byte)value;
-                        if (!hidDevice.WriteFeatureData(newReport3))
-                            hidDevice.CloseDevice();
+                        _hidDevice.SetFeature(newReport3);
                     }
                 }
             }
@@ -111,8 +108,7 @@ namespace ESP32SimWheel
                 {
                     byte[] newReport3 = NewReport3(_dataVersion.Minor);
                     newReport3[2] = (byte)value;
-                    if (!hidDevice.WriteFeatureData(newReport3))
-                        hidDevice.CloseDevice();
+                    _hidDevice.SetFeature(newReport3);
                 }
             }
 
@@ -161,8 +157,7 @@ namespace ESP32SimWheel
                 {
                     byte[] newReport3 = NewReport3(_dataVersion.Minor);
                     newReport3[1] = (byte)value;
-                    if (!hidDevice.WriteFeatureData(newReport3))
-                        hidDevice.CloseDevice();
+                    _hidDevice.SetFeature(newReport3);
                 }
             }
 
@@ -175,8 +170,7 @@ namespace ESP32SimWheel
                     {
                         byte[] newReport3 = NewReport3(_dataVersion.Minor);
                         newReport3[3] = value;
-                        if (!hidDevice.WriteFeatureData(newReport3))
-                            hidDevice.CloseDevice();
+                        _hidDevice.SetFeature(newReport3);
                     }
                 }
             }
@@ -185,12 +179,11 @@ namespace ESP32SimWheel
             // Constructor
             // --------------------------------------------------------
 
-            public Device(HidDevice hidDevice)
+            public Device(string path)
             {
-                if (hidDevice == null)
-                    throw new ArgumentNullException("hidDevice");
-                this.hidDevice = hidDevice;
-                hidDevice.OpenDevice();
+                this._hidDevice = new ESP32SimWheel.HidAPI.HidDevice(path);
+                if (!_hidDevice.IsOpen)
+                    throw new UnsupportedDeviceException();
 
                 // Read capabilities (feature) report
                 byte[] capabilitiesReport = GetCapabilitiesReport();
@@ -202,8 +195,8 @@ namespace ESP32SimWheel
                 // SimHub.Logging.Current.Info("[ESP32SimWheel] Magic number and data version ok");
 
                 // Check report sizes
-                int maxFeatureReportSize = hidDevice.Capabilities.FeatureReportByteLength;
-                int maxOutputReportSize = hidDevice.Capabilities.OutputReportByteLength;
+                int maxFeatureReportSize = _hidDevice.FeatureReportByteLength;
+                int maxOutputReportSize = _hidDevice.OutputReportByteLength;
                 CheckFeatureReportSizes(_dataVersion.Minor, maxFeatureReportSize);
                 CheckOutputReportSizes(_dataVersion.Minor, maxOutputReportSize);
                 // SimHub.Logging.Current.Info("[ESP32SimWheel] Report sizes ok");
@@ -244,9 +237,9 @@ namespace ESP32SimWheel
                     individualLedsCount);
 
                 // Populate HidInfo
-                _hidInfo.Path = hidDevice.DevicePath;
-                _hidInfo.VendorID = hidDevice.Attributes.VendorId;
-                _hidInfo.ProductID = hidDevice.Attributes.ProductId;
+                _hidInfo.Path = _hidDevice.Path;
+                _hidInfo.VendorID = _hidDevice.VendorID;
+                _hidInfo.ProductID = _hidDevice.ProductID;
                 _hidInfo.Manufacturer = ""; // Note: ReadManufacturer() does not work
                 string oemDisplayName = Utils.GetHidDisplayName(
                     _hidInfo.VendorID,
@@ -280,7 +273,9 @@ namespace ESP32SimWheel
             private byte[] GetCapabilitiesReport()
             {
                 byte[] featureReport;
-                if (hidDevice.ReadFeatureData(out featureReport, Constants.RID_FEATURE_CAPABILITIES))
+                if (_hidDevice.FeatureReportByteLength < Constants.REPORT3_SIZE_V1_0)
+                    throw new UnsupportedDeviceException();
+                if (_hidDevice.GetFeature(Constants.RID_FEATURE_CAPABILITIES, out featureReport))
                 {
                     if (!BitConverter.IsLittleEndian)
                     {
@@ -293,8 +288,7 @@ namespace ESP32SimWheel
                     }
                     return featureReport;
                 }
-                hidDevice.CloseDevice();
-                return null;
+                throw new UnsupportedDeviceException();
             }
 
             private static void CheckFeatureReportSizes(ushort dataMinorVersion, int maxFeatureReportSize)
@@ -375,7 +369,7 @@ namespace ESP32SimWheel
             // Private fields (IDevice)
             // --------------------------------------------------------
 
-            internal readonly HidDevice hidDevice;
+            internal readonly ESP32SimWheel.HidAPI.HidDevice _hidDevice;
             private readonly Capabilities _capabilities;
             private readonly HidInfo _hidInfo = new HidInfo();
             private readonly DataVersion _dataVersion;

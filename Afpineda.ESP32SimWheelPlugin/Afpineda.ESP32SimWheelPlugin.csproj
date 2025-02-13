@@ -111,6 +111,8 @@
         <Compile Include="src\ESP32SimWheel\DeviceV1.cs" />
         <Compile Include="src\ESP32SimWheel\DeviceV1.TelemetryData.cs" />
         <Compile Include="src\ESP32SimWheel\DeviceV1.PixelControl.cs" />
+        <Compile Include="src\ESP32SimWheel\HidAPI.NativeMethods.cs" />
+        <Compile Include="src\ESP32SimWheel\HidAPI.cs" />
         <Compile Include="src\ESP32SimWheel\FakeDevice.cs" Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'"/>
         <Compile Include="src\ESP32SimWheel\UnsupportedDeviceException.cs" />
         <Compile Include="src\ESP32SimWheel\Utils.cs" />

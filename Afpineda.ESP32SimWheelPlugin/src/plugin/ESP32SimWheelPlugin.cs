@@ -85,30 +85,48 @@ namespace Afpineda.ESP32SimWheelPlugin
             // Otherwise the underlying HID API will run into performance
             // problems, thus triggering the SimHub watchdog timer.
             TimeSpan timeSpan = DateTime.UtcNow - _lastFrameTimeStamp;
-            if (timeSpan.TotalMilliseconds > OUTPUT_RATE_MS)
-            {
-                _lastFrameTimeStamp = DateTime.UtcNow;
-                UpdateDeviceListWhenNeeded();
-                MonitorBindingsEnabling();
-                MonitorGameAndCar(ref data);
-                SendTelemetryData(ref data);
-                SendPixelData(ref data, pluginManager);
-                MonitorSaveRequest();
-                currentFrameTime = DateTime.UtcNow - _lastFrameTimeStamp;
-                computeMean(
-                    currentFrameTime.TotalMilliseconds,
+            computeMean(
+                    timeSpan.TotalMilliseconds,
                     ref frameTimeSamples,
                     ref meanFrameTime);
+            if (frameTimeSamples >= 500)
+            {
+                SimHub.Logging.Current.InfoFormat(
+                    "[ESP32 Sim-wheel] Mean frame time (500 samples): '{0} ms / {1} FPS' / {2} skipped frames",
+                    meanFrameTime,
+                    (meanFrameTime > 0) ? (1000 / meanFrameTime) : 0,
+                    skippedFrames);
+                frameTimeSamples = 0;
+                meanFrameTime = 0;
+                skippedFrames = 0;
+            }
 
-                if (frameTimeSamples >= 500)
-                {
-                    SimHub.Logging.Current.InfoFormat(
-                        "[ESP32 Sim-wheel] Mean processing time (500 samples): '{0} ms / {1} potential FPS'",
-                        meanFrameTime,
-                        (meanFrameTime > 0) ? (1000 / meanFrameTime) : 0);
-                    frameTimeSamples = 0;
-                    meanFrameTime = 0;
-                }
+            _lastFrameTimeStamp = DateTime.UtcNow;
+            UpdateDeviceListWhenNeeded();
+            MonitorBindingsEnabling();
+            MonitorGameAndCar(ref data);
+            if (meanFrameTime <= 50)
+            {
+                SendTelemetryData(ref data);
+                SendPixelData(ref data, pluginManager);
+            }
+            else
+                skippedFrames++;
+            MonitorSaveRequest();
+            currentFrameTime = DateTime.UtcNow - _lastFrameTimeStamp;
+            computeMean(
+                currentFrameTime.TotalMilliseconds,
+                ref frameProcessingSamples,
+                ref meanProcessingTime);
+
+            if (frameProcessingSamples >= 500)
+            {
+                SimHub.Logging.Current.InfoFormat(
+                    "[ESP32 Sim-wheel] Mean processing time (500 samples): '{0} ms / {1} potential FPS'",
+                    meanProcessingTime,
+                    (meanProcessingTime > 0) ? (1000 / meanProcessingTime) : 0);
+                meanProcessingTime = 0;
+                frameProcessingSamples = 0;
             }
             UITicker();
         }
@@ -355,6 +373,9 @@ namespace Afpineda.ESP32SimWheelPlugin
 
         private double meanFrameTime = 0;
         private double frameTimeSamples = 0;
+        private double meanProcessingTime = 0;
+        private double frameProcessingSamples = 0;
+        private double skippedFrames = 0;
 
         private void computeMean(double sample, ref double count, ref double mean)
         {
