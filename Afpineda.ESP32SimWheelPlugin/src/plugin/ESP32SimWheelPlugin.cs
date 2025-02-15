@@ -140,23 +140,11 @@ namespace Afpineda.ESP32SimWheelPlugin
 
         public void Init(PluginManager pluginManager)
         {
-            // Load settings
-            Settings = this.ReadCommonSettings<CustomSettings>(
-                "GeneralSettings",
-                () => new CustomSettings());
-
             SimHub.Logging.Current.InfoFormat(
-                           "[ESP32 Sim-wheel] Init: {0} device/game/car settings",
-                            Settings.DeviceGameAndCarSettings.Length);
-            foreach (var gameCarSettings in Settings.DeviceGameAndCarSettings)
-                SimHub.Logging.Current.InfoFormat(
-                    "[ESP32 Sim-wheel] Settings loaded for {0}/{1}/{2}",
-                    gameCarSettings.DeviceID,
-                    gameCarSettings.Game,
-                    gameCarSettings.Car);
-
+                "[ESP32 Sim-wheel] Plugin version: {0}",
+                PLUGIN_VERSION);
+            LoadSettings();
             // _lastFrameTimestamp = DateTime.UtcNow;
-            // Refresh device list
             _refreshDeviceList = true;
         }
 
@@ -188,6 +176,24 @@ namespace Afpineda.ESP32SimWheelPlugin
         // Auxiliary methods
         // --------------------------------------------------------
 
+        private void LoadSettings()
+        {
+            // Load settings
+            Settings = this.ReadCommonSettings<CustomSettings>(
+                "GeneralSettings",
+                () => new CustomSettings());
+
+            SimHub.Logging.Current.InfoFormat(
+                           "[ESP32 Sim-wheel] Init: {0} device/game/car settings",
+                            Settings.DeviceGameAndCarSettings.Length);
+            foreach (var gameCarSettings in Settings.DeviceGameAndCarSettings)
+                SimHub.Logging.Current.InfoFormat(
+                    "[ESP32 Sim-wheel] Settings loaded for {0}/{1}/{2}",
+                    gameCarSettings.DeviceID,
+                    gameCarSettings.Game,
+                    gameCarSettings.Car);
+        }
+
         private void ResetAllPixels()
         {
             foreach (var device in Settings.Devices)
@@ -198,6 +204,8 @@ namespace Afpineda.ESP32SimWheelPlugin
         // Private Fields and properties
         // --------------------------------------------------------
 
+
+
         private bool _refreshDeviceList = true;
         private bool _saveRequest = false;
         private DateTime _lastTick = DateTime.MinValue;
@@ -205,5 +213,11 @@ namespace Afpineda.ESP32SimWheelPlugin
         private bool _gamePaused = false;
         private uint _skippedFrames = 0;
         private const double TICK_RATE_MS = 500; // 2 FPS for UI
+
+        // --------------------------------------------------------
+       // --------------------------------------------------------
+       private const string PLUGIN_VERSION = "2.5.0";
+       // --------------------------------------------------------
+       // --------------------------------------------------------
     }
 }
