@@ -135,6 +135,8 @@ namespace ESP32SimWheel.HidAPI
         public bool GetFeature(byte id, out byte[] data)
         {
             data = new byte[(int)FeatureReportByteLength];
+            for (int i = 0; i < (int)FeatureReportByteLength; i++)
+                data[i] = 0;
             if (FeatureReportByteLength > 1)
             {
                 data[0] = id;
@@ -143,7 +145,7 @@ namespace ESP32SimWheel.HidAPI
             return false;
         }
 
-        public bool GetFeature(ref byte[] data)
+        private bool GetFeature(ref byte[] data)
         {
             if (Open())
             {
@@ -153,9 +155,11 @@ namespace ESP32SimWheel.HidAPI
                     SimHub.Logging.Current.InfoFormat(
                         "[ESP32 Sim-wheel] [HidAPI] HidD_GetFeature() failed with code {0}",
                         LastError);
-                    Close();
+                    if (LastError != 0)
+                        Close();
                     return false;
                 }
+                // NativeMethods.HidD_FlushQueue(Handle);
                 return true;
             }
             return false;
@@ -192,6 +196,7 @@ namespace ESP32SimWheel.HidAPI
                     Close();
                     return false;
                 }
+                NativeMethods.FlushFileBuffers(Handle);
                 return (lpNumberOfBytesWritten == data.Length);
             }
             return false;

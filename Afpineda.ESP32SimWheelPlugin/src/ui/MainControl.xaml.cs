@@ -19,6 +19,7 @@ using System.Windows.Threading;
 using SHDialogResult = System.Windows.Forms.DialogResult;
 
 using SimHub.Plugins.Styles;
+using SimHub.Plugins.UI;
 using SimHub.Plugins.DataPlugins.RGBDriver;
 using SimHub.Plugins.DataPlugins.RGBDriver.Settings;
 using SimHub.Plugins.OutputPlugins.GraphicalDash.UI;
@@ -74,6 +75,12 @@ namespace Afpineda.ESP32SimWheelPlugin
             binding = new Binding(nameof(Plugin.Settings.Devices));
             binding.Source = Plugin.Settings;
             SelectDeviceCombo.SetBinding(ComboBox.ItemsSourceProperty, binding);
+
+            binding = new Binding(nameof(Plugin.Settings.FrameSkip));
+            binding.Source = Plugin.Settings;
+            binding.Mode = BindingMode.TwoWay;
+            binding.FallbackValue = 50;
+            FrameSkipSlider.SetBinding(TitledSlider.ValueProperty, binding);
 
             binding = new Binding(nameof(Plugin.Settings.SelectedDevice));
             binding.Source = Plugin.Settings;

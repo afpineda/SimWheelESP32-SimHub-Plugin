@@ -55,7 +55,7 @@ namespace Afpineda.ESP32SimWheelPlugin
         /// <param name="data">Current game data, including current and previous data frame.</param>
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
-            // TimeSpan currentFrameTime;
+            // TimeSpan lastFrameTime = DateTime.UtcNow - _lastFrameTimestamp;
 
             if (data.GamePaused && !_gamePaused)
                 _refreshDeviceList = true;
@@ -63,18 +63,20 @@ namespace Afpineda.ESP32SimWheelPlugin
 
             RefreshAvailableDevicesWhenNeeded();
             MonitorGameAndCar(ref data);
-            foreach (var device in Settings.Devices)
+            if (_skippedFrames >= Settings.FrameSkip)
             {
-                device.Pixels?.RenderPixels(ref data, pluginManager);
-                device.TelemetryData?.SendTelemetry(ref data);
+                _skippedFrames = 0;
+                foreach (var device in Settings.Devices)
+                {
+                    device.Pixels?.RenderPixels(ref data, pluginManager);
+                    device.TelemetryData?.SendTelemetry(ref data);
+                }
             }
+            else
+                _skippedFrames++;
             RefreshSelectedDeviceWhenNeeded();
             MonitorSaveRequest();
-            // MonitorBindingsEnabling();
-            // SendTelemetryData(ref data);
-            // SendPixelData(ref data, pluginManager);
-            // UITicker();
-
+            // _lastFrameTimestamp = DateTime.UtcNow;
         }
 
         // --------------------------------------------------------
@@ -153,6 +155,7 @@ namespace Afpineda.ESP32SimWheelPlugin
                     gameCarSettings.Game,
                     gameCarSettings.Car);
 
+            // _lastFrameTimestamp = DateTime.UtcNow;
             // Refresh device list
             _refreshDeviceList = true;
         }
@@ -198,7 +201,9 @@ namespace Afpineda.ESP32SimWheelPlugin
         private bool _refreshDeviceList = true;
         private bool _saveRequest = false;
         private DateTime _lastTick = DateTime.MinValue;
+        // private DateTime _lastFrameTimestamp = DateTime.MinValue;
         private bool _gamePaused = false;
+        private uint _skippedFrames = 0;
         private const double TICK_RATE_MS = 500; // 2 FPS for UI
     }
 }

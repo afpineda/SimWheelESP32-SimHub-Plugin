@@ -61,6 +61,7 @@
                     </StackPanel>
                 </StackPanel>
             </styles:SHLeftRightWrapper>
+            <ui:TitledSlider Title="Frame skip" Maximum="50" Minimum="0" Value="0" x:Name="FrameSkipSlider"/>
             <styles:SHSectionSeparator />
             <ComboBox Grid.Column="0"
                       Margin="20,20,20,20"

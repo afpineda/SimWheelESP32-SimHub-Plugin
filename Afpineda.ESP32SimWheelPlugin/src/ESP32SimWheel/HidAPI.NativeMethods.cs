@@ -42,9 +42,6 @@ namespace ESP32SimWheel.HidAPI
             uint hTemplateFile);
 
         [DllImport("kernel32.dll")]
-        internal static extern uint WaitForSingleObject(IntPtr hHandle, int dwMilliseconds);
-
-        [DllImport("kernel32.dll")]
         internal static extern bool WriteFile(
             IntPtr hFile,
             byte[] lpBuffer,
@@ -95,12 +92,16 @@ namespace ESP32SimWheel.HidAPI
               ref IntPtr preparsedData);
 
         [DllImport("hid.dll")]
+        internal static extern bool HidD_FreePreparsedData(IntPtr preparsedData);
+
+        [DllImport("hid.dll")]
         internal static extern bool HidD_SetNumInputBuffers(
             IntPtr hidDeviceObject,
             ulong NumberBuffers);
 
         [DllImport("hid.dll")]
-        internal static extern bool HidD_FreePreparsedData(IntPtr preparsedData);
+        internal static extern bool HidD_FlushQueue(
+            IntPtr HidDeviceObject);
 
 #pragma warning disable 0649
 

@@ -21,6 +21,21 @@ namespace Afpineda.ESP32SimWheelPlugin
 {
     public partial class CustomSettings : INotifyPropertyChanged
     {
+        public uint FrameSkip
+        {
+            get { return _frameSkip; }
+            set
+            {
+                if (_frameSkip != value)
+                {
+                    _frameSkip = value;
+                    SimHub.Logging.Current.InfoFormat("[ESP32 Sim-wheel] Frame skip = {0}", value);
+                    NotifyPropertyChanged();
+                }
+            }
+        }
+
+
         [JsonIgnore]
         public ESP32SimWheel.IDevice SelectedDevice
         {
@@ -82,8 +97,8 @@ namespace Afpineda.ESP32SimWheelPlugin
             }
         }
 
-
         private ESP32SimWheel.IDevice _selectedDevice = null;
+        private uint _frameSkip = 0;
 
     }// class CustomSettings
 }// namespace Afpineda.ESP32SimWheelPlugin
