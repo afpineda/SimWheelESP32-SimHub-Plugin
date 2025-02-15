@@ -1,8 +1,11 @@
-// Decompiled with JetBrains decompiler
-// Type: HidLibrary.HidDevice
-// Assembly: SimHub.Plugins, Version=1.0.9151.26705, Culture=neutral, PublicKeyToken=null
-// MVID: 9821E53B-9D0D-46DC-913E-6B209E69703E
-// Assembly location: C:\Program Files (x86)\SimHub\SimHub.Plugins.dll
+#region License
+/******************************************************************************
+ * @author Ángel Fernández Pineda. Madrid. Spain.
+ * @date 2025-02-13
+ *
+ * @copyright Licensed under the EUPL
+ *****************************************************************************/
+#endregion License
 
 using System;
 using System.Runtime.InteropServices;
