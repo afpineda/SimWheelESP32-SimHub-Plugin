@@ -109,6 +109,36 @@ namespace ESP32SimWheel
                 ShowPixelsNow();
             }
 
+            public RGBLedsDriver TelemetryLedsDriver
+            {
+                get
+                {
+                    if (_rgbLedsDriver[(int)PixelGroups.TelemetryLeds] != null)
+                        return _rgbLedsDriver[(int)PixelGroups.TelemetryLeds];
+                    return null;
+                }
+            }
+
+            public RGBLedsDriver BacklightLedsDriver
+            {
+                get
+                {
+                    if (_rgbLedsDriver[(int)PixelGroups.ButtonsLighting] != null)
+                        return _rgbLedsDriver[(int)PixelGroups.ButtonsLighting];
+                    return null;
+                }
+            }
+
+            public RGBLedsDriver IndividualLedsDriver
+            {
+                get
+                {
+                    if (_rgbLedsDriver[(int)PixelGroups.IndividualLeds] != null)
+                        return _rgbLedsDriver[(int)PixelGroups.IndividualLeds];
+                    return null;
+                }
+            }
+
             // --------------------------------------------------------
             // Pseudo-constructor
             // --------------------------------------------------------

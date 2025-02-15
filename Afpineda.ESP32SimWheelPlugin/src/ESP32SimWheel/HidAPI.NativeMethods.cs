@@ -94,6 +94,10 @@ namespace ESP32SimWheel.HidAPI
               IntPtr hidDeviceObject,
               ref IntPtr preparsedData);
 
+        [DllImport("hid.dll")]
+        internal static extern bool HidD_SetNumInputBuffers(
+            IntPtr hidDeviceObject,
+            ulong NumberBuffers);
 
         [DllImport("hid.dll")]
         internal static extern bool HidD_FreePreparsedData(IntPtr preparsedData);

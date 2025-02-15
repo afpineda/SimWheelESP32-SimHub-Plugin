@@ -104,6 +104,16 @@ namespace ESP32SimWheel.HidAPI
                     InputReportByteLength = capabilities.InputReportByteLength;
                     FeatureReportByteLength = capabilities.FeatureReportByteLength;
                     OutputReportByteLength = capabilities.OutputReportByteLength;
+
+                    // Try to increase read buffers
+                    if (!NativeMethods.HidD_SetNumInputBuffers(Handle, 256))
+                    {
+                        LastError = Marshal.GetLastWin32Error();
+                        SimHub.Logging.Current.InfoFormat(
+                            "[ESP32 Sim-wheel] [HidAPI] HidD_SetNumInputBuffers() failed with code {0}",
+                            LastError);
+                    }
+
                     return true;
                 }
                 else
@@ -140,6 +150,10 @@ namespace ESP32SimWheel.HidAPI
                 if (!NativeMethods.HidD_GetFeature(Handle, data, data.Length))
                 {
                     LastError = Marshal.GetLastWin32Error();
+                    SimHub.Logging.Current.InfoFormat(
+                        "[ESP32 Sim-wheel] [HidAPI] HidD_GetFeature() failed with code {0}",
+                        LastError);
+                    Close();
                     return false;
                 }
                 return true;
@@ -154,6 +168,7 @@ namespace ESP32SimWheel.HidAPI
                 if (!NativeMethods.HidD_SetFeature(Handle, data, data.Length))
                 {
                     LastError = Marshal.GetLastWin32Error();
+                    Close();
                     return false;
                 }
                 return true;
@@ -174,6 +189,7 @@ namespace ESP32SimWheel.HidAPI
                     IntPtr.Zero))
                 {
                     LastError = Marshal.GetLastWin32Error();
+                    Close();
                     return false;
                 }
                 return (lpNumberOfBytesWritten == data.Length);

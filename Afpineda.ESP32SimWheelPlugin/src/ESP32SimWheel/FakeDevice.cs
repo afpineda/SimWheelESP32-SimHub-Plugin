@@ -12,6 +12,7 @@ using System.Text;
 using System.Drawing;
 using SimHub.Plugins;
 using SimHub.Plugins.DataPlugins.RGBDriver;
+using SimHub.Plugins.DataPlugins.RGBDriver.Settings;
 using GameReaderCommon;
 
 namespace ESP32SimWheel
@@ -36,9 +37,10 @@ namespace ESP32SimWheel
 
         public event FakeDeviceUpdateNotify OnFakeDeviceUpdate;
 
-        public void Refresh()
+        public bool Refresh()
         {
             bool updated = false;
+            // SimHub.Logging.Current.InfoFormat("[ESP32 Sim-wheel] [FakeDevice] [Debug] Refresh {0}", HidInfo.DisplayName);
             if (AnimateBitePoint)
             {
                 _bitePoint = (byte)(_bitePoint + 1);
@@ -48,6 +50,7 @@ namespace ESP32SimWheel
             }
             if (AnimateClutchWorkingMode)
             {
+                // SimHub.Logging.Current.InfoFormat("[ESP32 Sim-wheel] [FakeDevice] [Debug] AnimateClutchWorkingMode '{0}'", HidInfo.DisplayName);
                 if (_clutchWorkingMode == ClutchWorkingModes.LaunchControl_RightPaddle)
                     _clutchWorkingMode = ClutchWorkingModes.Clutch;
                 else
@@ -64,6 +67,7 @@ namespace ESP32SimWheel
             }
             if (updated)
                 OnFakeDeviceUpdate?.Invoke();
+            return updated;
         }
 
         // --------------------------------------------------------
@@ -298,6 +302,41 @@ namespace ESP32SimWheel
                             Afpineda.ESP32SimWheelPlugin.Utils.GetLedsSettingsFile(UniqueID, group))
                     :
                         null;
+                // SimHub.Logging.Current.InfoFormat(
+                //     "[FakeDeviceESP32] [{0}] ReloadLedsDriver(): {1} -> {2}",
+                //     _hidInfo.DisplayName,
+                //     group,
+                //     _rgbLedsDriver[(int)group] != null);
+            }
+        }
+
+        public RGBLedsDriver TelemetryLedsDriver
+        {
+            get
+            {
+                if (_rgbLedsDriver[(int)PixelGroups.TelemetryLeds] != null)
+                    return _rgbLedsDriver[(int)PixelGroups.TelemetryLeds];
+                return null;
+            }
+        }
+
+        public RGBLedsDriver BacklightLedsDriver
+        {
+            get
+            {
+                if (_rgbLedsDriver[(int)PixelGroups.ButtonsLighting] != null)
+                    return _rgbLedsDriver[(int)PixelGroups.ButtonsLighting];
+                return null;
+            }
+        }
+
+        public RGBLedsDriver IndividualLedsDriver
+        {
+            get
+            {
+                if (_rgbLedsDriver[(int)PixelGroups.IndividualLeds] != null)
+                    return _rgbLedsDriver[(int)PixelGroups.IndividualLeds];
+                return null;
             }
         }
 
@@ -348,6 +387,7 @@ namespace ESP32SimWheel
         {
             _device = device;
             _device.OnFakeDeviceUpdate += (() => _updated = true);
+            _device.ReloadLedsDriver();
         }
 
         // --------------------------------------------------------

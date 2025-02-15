@@ -10,6 +10,7 @@
 using System.Drawing;
 using GameReaderCommon;
 using SimHub.Plugins;
+using SimHub.Plugins.DataPlugins.RGBDriver;
 
 namespace ESP32SimWheel
 {
@@ -182,6 +183,9 @@ namespace ESP32SimWheel
         void ResetPixels();
         void RenderPixels(ref GameData data, PluginManager manager);
         void ReloadLedsDriver();
+        RGBLedsDriver TelemetryLedsDriver { get; }
+        RGBLedsDriver BacklightLedsDriver { get; }
+        RGBLedsDriver IndividualLedsDriver { get; }
     }
 
     public interface IDevice

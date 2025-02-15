@@ -49,6 +49,7 @@ namespace Afpineda.ESP32SimWheelPlugin
             this.Plugin = plugin;
             CreateBindings();
             IsVisibleChanged += OnVisibilityChange;
+            OnSelectDevice(null, null);
         }
 
         // --------------------------------------------------------
@@ -57,29 +58,129 @@ namespace Afpineda.ESP32SimWheelPlugin
 
         private void CreateBindings()
         {
-            // BindToGameCarCheckbox
             Binding binding = new Binding(nameof(Plugin.Settings.BindToGameAndCar));
             binding.Source = Plugin.Settings;
             binding.Mode = BindingMode.TwoWay;
             BindToGameCarCheckbox.SetBinding(ToggleButton.IsCheckedProperty, binding);
 
-            // GameAndCarText
             binding = new Binding(nameof(Plugin.Settings.CurrentGameAndCar));
             binding.Source = Plugin.Settings;
             GameAndCarText.SetBinding(TextBlock.TextProperty, binding);
 
-            // SaveButton
             binding = new Binding(nameof(Plugin.Settings.IsBindingAvailable));
             binding.Source = Plugin.Settings;
             SaveButton.SetBinding(Button.IsEnabledProperty, binding);
-            SaveButton.Click += SaveButton_click;
 
-            // RefreshButton
-            RefreshButton.Click += RefreshButton_click;
+            binding = new Binding(nameof(Plugin.Settings.Devices));
+            binding.Source = Plugin.Settings;
+            SelectDeviceCombo.SetBinding(ComboBox.ItemsSourceProperty, binding);
 
-            // SelectedDeviceCombo
-            SelectDeviceCombo.ItemsSource = AvailableDevices;
+            binding = new Binding(nameof(Plugin.Settings.SelectedDevice));
+            binding.Source = Plugin.Settings;
+            SelectDeviceCombo.SetBinding(ComboBox.SelectedItemProperty, binding);
             SelectDeviceCombo.SelectionChanged += OnSelectDevice;
+
+            PropertyPath isLockedPropertyPath = new PropertyPath("SelectedDevice.SecurityLock.IsLocked", null);
+            binding = new Binding();
+            binding.Source = Plugin.Settings;
+            binding.Path = isLockedPropertyPath;
+            binding.Converter = new ESP32SimWheel.Utils.SecurityLockToStringConverter();
+            binding.FallbackValue = false;
+            binding.Mode = BindingMode.OneWay;
+            SecurityLockText.SetBinding(TextBlock.TextProperty, binding);
+
+            binding = new Binding();
+            binding.Source = Plugin.Settings;
+            binding.Path = isLockedPropertyPath;
+            binding.Converter = new ESP32SimWheel.Utils.InvertBooleanConverter();
+            binding.FallbackValue = true;
+            binding.Mode = BindingMode.OneWay;
+            ClutchPaddlesGroup.SetBinding(StackPanel.IsEnabledProperty, binding);
+            AltButtonsGroup.SetBinding(StackPanel.IsEnabledProperty, binding);
+            DPadGroup.SetBinding(StackPanel.IsEnabledProperty, binding);
+
+            binding = new Binding();
+            binding.Source = Plugin.Settings;
+            binding.Path = new PropertyPath("SelectedDevice.Battery.BatteryLevel", null);
+            binding.StringFormat = "{0:D}%";
+            binding.Mode = BindingMode.OneWay;
+            binding.FallbackValue = "Not available";
+            BatteryText.SetBinding(TextBlock.TextProperty, binding);
+
+            binding = new Binding();
+            binding.Source = Plugin.Settings;
+            binding.Path = new PropertyPath("SelectedDevice.Clutch.ClutchWorkingMode", null);
+            binding.Mode = BindingMode.TwoWay;
+            binding.Converter = new ESP32SimWheel.Utils.ClutchWorkingModeConverter();
+            binding.FallbackValue = 0;
+            ClutchWorkingModeListBox.SetBinding(ListBox.SelectedIndexProperty, binding);
+
+            binding = new Binding();
+            binding.Source = Plugin.Settings;
+            binding.Path = new PropertyPath("SelectedDevice.Clutch.BitePoint", null);
+            binding.Mode = BindingMode.TwoWay;
+            binding.FallbackValue = 0;
+            BitePointSlider.SetBinding(Slider.ValueProperty, binding);
+
+            binding = new Binding();
+            binding.Source = Plugin.Settings;
+            binding.Path = new PropertyPath("SelectedDevice.DPad.DPadWorkingMode", null);
+            binding.Mode = BindingMode.TwoWay;
+            binding.Converter = new ESP32SimWheel.Utils.DPadWorkingModeConverter();
+            binding.FallbackValue = 0;
+            DPadWorkingModeListBox.SetBinding(ListBox.SelectedIndexProperty, binding);
+
+            binding = new Binding();
+            binding.Source = Plugin.Settings;
+            binding.Path = new PropertyPath("SelectedDevice.AltButtons.AltButtonsWorkingMode", null);
+            binding.Mode = BindingMode.TwoWay;
+            binding.Converter = new ESP32SimWheel.Utils.AltButtonsWorkingModeConverter();
+            binding.FallbackValue = 0;
+            AltButtonsWorkingModeListBox.SetBinding(ListBox.SelectedIndexProperty, binding);
+
+            binding = new Binding();
+            binding.Source = Plugin.Settings;
+            binding.Path = new PropertyPath("SelectedDevice.Capabilities.TelemetryLedsCount", null);
+            binding.Mode = BindingMode.OneWay;
+            binding.Converter = new ESP32SimWheel.Utils.PixelCountToVisibilityConverter();
+            binding.FallbackValue = System.Windows.Visibility.Collapsed;
+            TelemetryLedsGroup.SetBinding(UIElement.VisibilityProperty, binding);
+
+            binding = new Binding();
+            binding.Source = Plugin.Settings;
+            binding.Path = new PropertyPath("SelectedDevice.Capabilities.ButtonsLightingCount", null);
+            binding.Mode = BindingMode.OneWay;
+            binding.Converter = new ESP32SimWheel.Utils.PixelCountToVisibilityConverter();
+            binding.FallbackValue = System.Windows.Visibility.Collapsed;
+            ButtonLedsGroup.SetBinding(UIElement.VisibilityProperty, binding);
+
+            binding = new Binding();
+            binding.Source = Plugin.Settings;
+            binding.Path = new PropertyPath("SelectedDevice.Capabilities.IndividualLedsCount", null);
+            binding.Mode = BindingMode.OneWay;
+            binding.Converter = new ESP32SimWheel.Utils.PixelCountToVisibilityConverter();
+            binding.FallbackValue = System.Windows.Visibility.Collapsed;
+            IndividualLedsGroup.SetBinding(UIElement.VisibilityProperty, binding);
+
+            binding = new Binding(nameof(Plugin.Settings.TelemetryLedsSettings));
+            binding.Source = Plugin.Settings;
+            binding.Mode = BindingMode.OneWay;
+            TelemetryLedsProfileCombo.SetBinding(ProfileCombobox.ProfileSettingsProperty, binding);
+
+            binding = new Binding(nameof(Plugin.Settings.BackLightLedsSettings));
+            binding.Source = Plugin.Settings;
+            binding.Mode = BindingMode.OneWay;
+            ButtonLedsProfileCombo.SetBinding(ProfileCombobox.ProfileSettingsProperty, binding);
+
+            binding = new Binding(nameof(Plugin.Settings.IndividualLedsSettings));
+            binding.Source = Plugin.Settings;
+            binding.Mode = BindingMode.OneWay;
+            IndividualLedsProfileCombo.SetBinding(ProfileCombobox.ProfileSettingsProperty, binding);
+
+
+            // Save car/game bindings and refresh device list
+            SaveButton.Click += SaveButton_click;
+            RefreshButton.Click += RefreshButton_click;
 
             // LEDs driver: TelemetryLedsGroup
             TelemetryLedsEditProfile.Click += LedsEditProfile_Click;
@@ -102,118 +203,6 @@ namespace Afpineda.ESP32SimWheelPlugin
         }
 
         // --------------------------------------------------------
-        // Automatic UI update from device status
-        // --------------------------------------------------------
-
-        public void UpdateUIFromDeviceState()
-        {
-            // Invoked from the plugin thread at timed intervals
-            // Invoked from the UI thread when SelectDevice changes
-            if (SelectedDevice != null)
-            {
-                SelectedDevice.Refresh();
-                _updating = true;
-                UpdateUIFromBatteryState(SelectedDevice.Battery);
-                UpdateUIFromClutchState(SelectedDevice.Clutch);
-                UpdateUIFromSecurityLockState(SelectedDevice.SecurityLock);
-                UpdateUIFromDPad(SelectedDevice.DPad);
-                UpdateUIFromAltButtons(SelectedDevice.AltButtons);
-                _updating = false;
-            }
-        }
-
-        public void RefreshDeviceList()
-        {
-            // Invoked from the plugin thread when required
-            SimHub.Logging.Current.Info("[ESP32 Sim-wheel] [UI] Refreshing device list");
-
-            // Remember current device selection
-            ESP32SimWheel.IDevice currentDevice = SelectedDevice;
-            ESP32SimWheel.IDevice autoSelection = null;
-
-            // Recreate device list
-            AvailableDevices.Clear();
-            foreach (var device in Devices.Enumerate())
-            {
-                AvailableDevices.Add(device);
-                if ((currentDevice != null) && (currentDevice.UniqueID == device.UniqueID))
-                    autoSelection = device;
-            }
-
-            // Trick to force UI update
-            SelectDeviceCombo.ItemsSource = null;
-            SelectDeviceCombo.ItemsSource = AvailableDevices;
-
-            // Restore previous device selection, if any
-            if (autoSelection != null)
-                SelectDeviceCombo.SelectedItem = autoSelection;
-            else if (SelectDeviceCombo.Items.Count > 0)
-                // Or select the first available device, if any
-                SelectDeviceCombo.SelectedIndex = 0;
-            else
-                // Disable user interface, since there are no devices
-                OnSelectDevice(null, null);
-            SelectDeviceCombo.IsEnabled = (SelectDeviceCombo.Items.Count > 0);
-        }
-
-        private void UpdateUIFromSecurityLockState(ESP32SimWheel.ISecurityLock sLock)
-        {
-            ClutchPaddlesGroup.IsEnabled = !sLock?.IsLocked ?? false;
-            AltButtonsGroup.IsEnabled = ClutchPaddlesGroup.IsEnabled;
-            DPadGroup.IsEnabled = ClutchPaddlesGroup.IsEnabled;
-            if (ClutchPaddlesGroup.IsEnabled)
-                SecurityLockText.Text = "Disabled";
-            else
-                SecurityLockText.Text = "⚠ Enabled";
-        }
-
-        private void UpdateUIFromBatteryState(ESP32SimWheel.IBattery battery)
-        {
-            if (battery == null)
-                BatteryText.Text = "Not available";
-            else
-                BatteryText.Text = string.Format("{0:D}%", battery.BatteryLevel);
-        }
-
-        private void UpdateUIFromClutchState(ESP32SimWheel.IClutch clutch)
-        {
-            if (clutch != null)
-            {
-                BitePointSlider.Value = clutch.BitePoint;
-                ClutchWorkingModeListBox.UnselectAll();
-                ClutchWorkingModeListBox.SelectedIndex =
-                    (int)clutch.ClutchWorkingMode;
-                BitePointSlider.IsEnabled =
-                    (clutch.ClutchWorkingMode == ClutchWorkingModes.Clutch) ||
-                    (clutch.ClutchWorkingMode == ClutchWorkingModes.LaunchControl_LeftPaddle) ||
-                    (clutch.ClutchWorkingMode == ClutchWorkingModes.LaunchControl_RightPaddle);
-            }
-        }
-
-        private void UpdateUIFromDPad(ESP32SimWheel.IDpad dPad)
-        {
-            if (dPad != null)
-            {
-                DPadWorkingModeListBox.UnselectAll();
-                if (dPad.DPadWorkingMode == DPadWorkingModes.Button)
-                    DPadWorkingModeListBox.SelectedIndex = 1;
-                else
-                    DPadWorkingModeListBox.SelectedIndex = 0;
-            }
-        }
-        private void UpdateUIFromAltButtons(ESP32SimWheel.IAltButtons altButtons)
-        {
-            if (altButtons != null)
-            {
-                AltButtonsWorkingModeListBox.UnselectAll();
-                if (altButtons.AltButtonsWorkingMode == AltButtonWorkingModes.Button)
-                    AltButtonsWorkingModeListBox.SelectedIndex = 1;
-                else
-                    AltButtonsWorkingModeListBox.SelectedIndex = 0;
-            }
-        }
-
-        // --------------------------------------------------------
         // UI Event callbacks
         // (triggered by user interaction)
         // --------------------------------------------------------
@@ -226,19 +215,14 @@ namespace Afpineda.ESP32SimWheelPlugin
             SimHub.Logging.Current.InfoFormat(
                    "[ESP32 Sim-Wheel] [UI] Visibility = {0}",
                    visible);
-            if (visible)
-            {
-                BindToGameCarCheckbox.IsChecked = Plugin.Settings.BindToGameAndCar;
-            }
+            Plugin.Settings.IsUIVisible = visible;
         }
 
         private void OnSelectDevice(object sender, SelectionChangedEventArgs args)
         {
+            var SelectedDevice = Plugin.Settings.SelectedDevice;
             if (SelectedDevice != null)
-
             {
-                SimHub.Logging.Current.InfoFormat("[ESP32 Sim-wheel] [UI] Device selected: {0}", SelectedDevice.HidInfo.DisplayName);
-
                 // Update static UI elements (not dependant on device state)
                 TabVisible(InfoPage, true);
                 HidInfoText.Text = string.Format("{0,4:X4} / {1,4:X4}",
@@ -272,10 +256,6 @@ namespace Afpineda.ESP32SimWheelPlugin
                 TabVisible(DPadPage, SelectedDevice.Capabilities.HasDPad);
                 TabVisible(LedsPage, SelectedDevice.Capabilities.HasPixelControl);
                 MainPages.SelectedIndex = 0;
-
-                // Read device state and update dynamic UI elements
-                UpdateLedsDrivers();
-                UpdateUIFromDeviceState();
             }
             else
             {
@@ -289,15 +269,6 @@ namespace Afpineda.ESP32SimWheelPlugin
             }
         }
 
-        private void OnBitePointSliderChanged(object sender, RoutedPropertyChangedEventArgs<double> args)
-        {
-            args.Handled = true;
-            if (SelectedDevice?.Clutch == null)
-                return;
-            if (!_updating)
-                // propagate UI -> device
-                SelectedDevice.Clutch.BitePoint = (byte)BitePointSlider.Value;
-        }
 
         private void RefreshButton_click(object sender, System.Windows.RoutedEventArgs e)
         {
@@ -309,85 +280,30 @@ namespace Afpineda.ESP32SimWheelPlugin
             Plugin.Save();
         }
 
-        private void OnClutchWorkingModeChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if ((SelectedDevice?.Clutch != null) && !_updating)
-                foreach (ClutchWorkingModes workingMode in Enum.GetValues(typeof(ClutchWorkingModes)))
-                {
-                    ListBoxItem item = (ListBoxItem)
-                        ClutchWorkingModeListBox.
-                            ItemContainerGenerator.
-                                ContainerFromIndex((int)workingMode);
-                    if (item?.IsSelected ?? false)
-                    {
-                        SelectedDevice.Clutch.ClutchWorkingMode = workingMode;
-                        BitePointSlider.IsEnabled =
-                            (workingMode == ClutchWorkingModes.Clutch) ||
-                            (workingMode == ClutchWorkingModes.LaunchControl_LeftPaddle) ||
-                            (workingMode == ClutchWorkingModes.LaunchControl_RightPaddle);
-                        return;
-                    }
-                }
-        }
-
-        private void OnBindToGameCarChanged(object sender, RoutedEventArgs e)
-        {
-            Plugin.Settings.BindToGameAndCar = BindToGameCarCheckbox.IsChecked ?? false;
-            SaveButton.IsEnabled =
-                Plugin.Settings.BindToGameAndCar &&
-                Plugin.Settings.GameAndCarAvailable;
-        }
-
-        private void OnAltButtonsWorkingModeChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if ((SelectedDevice?.AltButtons != null) && !_updating)
-            {
-                if (AltButtonsButtonMode.IsSelected)
-                    SelectedDevice.AltButtons.AltButtonsWorkingMode =
-                        AltButtonWorkingModes.Button;
-                else
-                    SelectedDevice.AltButtons.AltButtonsWorkingMode =
-                        AltButtonWorkingModes.ALT;
-            }
-        }
-
-        private void OnDPadWorkingModeChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if ((SelectedDevice?.DPad != null) && !_updating)
-            {
-                if (DPadButtonMode.IsSelected)
-                    SelectedDevice.DPad.DPadWorkingMode =
-                        DPadWorkingModes.Button;
-                else
-                    SelectedDevice.DPad.DPadWorkingMode =
-                        DPadWorkingModes.Navigation;
-            }
-        }
-
         private void LedsEditProfile_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            if (SelectedDevice != null)
+            if ((Plugin.Settings.SelectedDevice != null) && (Plugin.Settings.SelectedDevice.Pixels != null))
             {
                 RGBLedsDriver driver = null;
-                string subtitle = null;
+                string subtitle = "";
                 if (sender == TelemetryLedsEditProfile)
                 {
-                    driver = _rgbLedsDriver[(int)PixelGroups.TelemetryLeds];
+                    driver = Plugin.Settings.SelectedDevice.Pixels.TelemetryLedsDriver;
                     subtitle = TelemetryLedsGroup.Title;
                 }
                 if (sender == ButtonLedsEditProfile)
                 {
-                    driver = _rgbLedsDriver[(int)PixelGroups.ButtonsLighting];
+                    driver = Plugin.Settings.SelectedDevice.Pixels.BacklightLedsDriver;
                     subtitle = ButtonLedsGroup.Title;
                 }
                 if (sender == IndividualLedsEditProfile)
                 {
-                    driver = _rgbLedsDriver[(int)PixelGroups.IndividualLeds];
+                    driver = Plugin.Settings.SelectedDevice.Pixels.IndividualLedsDriver;
                     subtitle = ButtonLedsGroup.Title;
                 }
                 driver?.ShowEditorWindow(
                     this,
-                    SelectedDevice.HidInfo.DisplayName,
+                    Plugin.Settings.SelectedDevice.HidInfo.DisplayName,
                     subtitle);
             }
         }
@@ -396,11 +312,11 @@ namespace Afpineda.ESP32SimWheelPlugin
         {
             RGBLedsDriver driver = null;
             if (sender == TelemetryLedsImportProfile)
-                driver = _rgbLedsDriver[(int)PixelGroups.TelemetryLeds];
+                driver = Plugin.Settings.SelectedDevice?.Pixels?.TelemetryLedsDriver ?? null;
             if (sender == ButtonLedsImportProfile)
-                driver = _rgbLedsDriver[(int)PixelGroups.ButtonsLighting];
+                driver = Plugin.Settings.SelectedDevice?.Pixels?.BacklightLedsDriver ?? null;
             if (sender == IndividualLedsImportProfile)
-                driver = _rgbLedsDriver[(int)PixelGroups.IndividualLeds];
+                driver = Plugin.Settings.SelectedDevice?.Pixels?.IndividualLedsDriver ?? null;
             if (driver != null)
                 new ProfilesManager<Profile, LedsSettings>(
                     (IProfileSettings<Profile>)driver.Settings).
@@ -411,11 +327,11 @@ namespace Afpineda.ESP32SimWheelPlugin
         {
             RGBLedsDriver driver = null;
             if (sender == TelemetryLedsLoadProfile)
-                driver = _rgbLedsDriver[(int)PixelGroups.TelemetryLeds];
+                driver = Plugin.Settings.SelectedDevice?.Pixels?.TelemetryLedsDriver ?? null;
             if (sender == ButtonLedsLoadProfile)
-                driver = _rgbLedsDriver[(int)PixelGroups.ButtonsLighting];
+                driver = Plugin.Settings.SelectedDevice?.Pixels?.BacklightLedsDriver ?? null;
             if (sender == IndividualLedsLoadProfile)
-                driver = _rgbLedsDriver[(int)PixelGroups.IndividualLeds];
+                driver = Plugin.Settings.SelectedDevice?.Pixels?.IndividualLedsDriver ?? null;
             if (driver != null)
                 new ProfilesManager<Profile, LedsSettings>(
                 (IProfileSettings<Profile>)driver.Settings).
@@ -424,28 +340,31 @@ namespace Afpineda.ESP32SimWheelPlugin
 
         private void SaveLedProfilesButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            foreach (PixelGroups group in Enum.GetValues(typeof(PixelGroups)))
-                _rgbLedsDriver[(int)group]?.SaveSettings();
-            if (SelectedDevice != null)
-                Plugin.ReloadRGBLedDrivers(SelectedDevice.UniqueID);
+            RGBLedsDriver driver = Plugin.Settings.SelectedDevice?.Pixels?.TelemetryLedsDriver ?? null;
+            driver?.SaveSettings();
+            driver = Plugin.Settings.SelectedDevice?.Pixels?.BacklightLedsDriver ?? null;
+            driver?.SaveSettings();
+            driver = Plugin.Settings.SelectedDevice?.Pixels?.IndividualLedsDriver ?? null;
+            driver?.SaveSettings();
         }
 
         private async void UndoLedProfilesButton_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-
+            if ((Plugin.Settings.SelectedDevice == null) ||
+                (Plugin.Settings.SelectedDevice.Pixels == null))
+                return;
             var res = await SHMessageBox.Show(
                 "Are you sure?",
                 "Undo",
                 System.Windows.MessageBoxButton.OKCancel,
                 System.Windows.MessageBoxImage.Question);
             if (res == SHDialogResult.OK)
-                UpdateLedsDrivers();
+                Plugin.Settings.SelectedDevice?.Pixels?.ReloadLedsDriver();
         }
 
         // --------------------------------------------------------
         // Auxiliary methods
         // --------------------------------------------------------
-
 
         // Show or hide tab pages
         private void TabVisible(SimHub.Plugins.Styles.SHTabItem tabPage, bool visible)
@@ -477,54 +396,11 @@ namespace Afpineda.ESP32SimWheelPlugin
             }
         }
 
-        private void UpdateLedsDrivers()
-        {
-            TelemetryLedsProfileCombo.ProfileSettings = null;
-            ButtonLedsProfileCombo.ProfileSettings = null;
-            IndividualLedsProfileCombo.ProfileSettings = null;
-            if (SelectedDevice != null)
-            {
-                foreach (PixelGroups group in Enum.GetValues(typeof(PixelGroups)))
-                {
-                    _rgbLedsDriver[(int)group] =
-                        (SelectedDevice.Capabilities.GetPixelCount(group) > 0) ?
-                            new RGBLedsDriver(
-                                Utils.GetLedsSettingsFile(SelectedDevice.UniqueID, group))
-                        :
-                            null;
-                }
-            }
-            else
-            {
-                _rgbLedsDriver[0] = null;
-                _rgbLedsDriver[1] = null;
-                _rgbLedsDriver[2] = null;
-            }
-            TelemetryLedsProfileCombo.ProfileSettings =
-                _rgbLedsDriver[(int)PixelGroups.TelemetryLeds]?.Settings;
-            ButtonLedsProfileCombo.ProfileSettings =
-                _rgbLedsDriver[(int)PixelGroups.ButtonsLighting]?.Settings;
-            IndividualLedsProfileCombo.ProfileSettings =
-                _rgbLedsDriver[(int)PixelGroups.IndividualLeds]?.Settings;
-        }
-
         // --------------------------------------------------------
-        // Private Fields and properties
+        // Owner
         // --------------------------------------------------------
 
-        private bool _updating = false;
-        // private readonly DispatcherTimer _updateTimer;
-
-        private ESP32SimWheel.IDevice SelectedDevice
-        {
-            get { return SelectDeviceCombo.SelectedItem as ESP32SimWheel.IDevice; }
-        }
-
-        private readonly List<ESP32SimWheel.IDevice> AvailableDevices = new List<ESP32SimWheel.IDevice>();
         public ESP32SimWheelPlugin Plugin { get; }
-        // private const int POLLING_INTERVAL_MS = 250;
-
-        private readonly RGBLedsDriver[] _rgbLedsDriver = new RGBLedsDriver[3];
 
     } // classMainControl
 } //namespace Afpineda.ESP32SimWheelPlugin

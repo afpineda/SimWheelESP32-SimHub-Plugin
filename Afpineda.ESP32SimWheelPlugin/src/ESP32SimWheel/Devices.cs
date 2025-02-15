@@ -60,11 +60,12 @@ namespace ESP32SimWheel
 
             fake = new FakeDevice(1, "Fake telemetry device");
             fake.Capabilities = new Capabilities(0x0040, 1);
-            FakeDevices.Add(fake);
+            // FakeDevices.Add(fake);
 
             fake = new FakeDevice(2, "Fake animated clutch device");
             fake.Capabilities = new Capabilities(0x0002, 0);
             fake.AnimateBitePoint = true;
+            fake.AnimateClutchWorkingMode = true;
             FakeDevices.Add(fake);
 
             fake = new FakeDevice(3, "Fake locked device");

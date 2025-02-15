@@ -177,7 +177,6 @@
                                     Working mode
                                 </styles:SHExpander.Header>
                                 <styles:SHListBox x:Name="ClutchWorkingModeListBox"
-                                                  SelectionChanged="OnClutchWorkingModeChanged"
                                                   Padding="10,10,10,10">
                                     <ListBoxItem IsSelected="true"
                                                  x:Name="CWMItem_Clutch">Clutch</ListBoxItem>
@@ -198,7 +197,8 @@
                                         Maximum="254"
                                         Minimum="0"
                                         Value="0"
-                                        ValueChanged="OnBitePointSliderChanged" />
+                                        TickFrequency="1"
+                                        IsSnapToTickEnabled="True" />
                             </styles:SHExpander>
                         </StackPanel>
                     </StackPanel>
@@ -215,7 +215,6 @@
                                 Working mode
                             </styles:SHExpander.Header>
                             <styles:SHListBox x:Name="AltButtonsWorkingModeListBox"
-                                              SelectionChanged="OnAltButtonsWorkingModeChanged"
                                               Padding="10,10,10,10">
                                 <ListBoxItem IsSelected="true">Alternate mode</ListBoxItem>
                                 <ListBoxItem x:Name="AltButtonsButtonMode">Regular button</ListBoxItem>
@@ -235,7 +234,6 @@
                                 Working mode
                             </styles:SHExpander.Header>
                             <styles:SHListBox x:Name="DPadWorkingModeListBox"
-                                              SelectionChanged="OnDPadWorkingModeChanged"
                                               Padding="10,10,10,10">
                                 <ListBoxItem IsSelected="true">Navigation</ListBoxItem>
                                 <ListBoxItem x:Name="DPadButtonMode">Regular button</ListBoxItem>
