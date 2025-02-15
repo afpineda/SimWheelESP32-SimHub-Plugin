@@ -110,7 +110,9 @@ Files are named by serial number: one file per device and LED group.
 
 ### Low frame rate (FPS)
 
-Firmware versions up to and including 6.11.2,
-and plugin versions up to and including 2.4.0
-will show very low performance with pixel control/telemetry data.
-Please upgrade to the latest versions.
+If you have telemetry or pixel control devices and experience a low frame rate in SimHub:
+
+- Increase the `Frame skip` value using the slider.
+  Keep this value as high as possible without limiting the functionality of your devices.
+  Typical value is around `5`.
+- Hide the user interface by selecting another option in the left menu.
