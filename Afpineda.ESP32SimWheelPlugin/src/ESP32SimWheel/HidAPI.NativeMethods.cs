@@ -41,7 +41,7 @@ namespace ESP32SimWheel.HidAPI
             uint dwFlagsAndAttributes,
             uint hTemplateFile);
 
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         internal static extern bool WriteFile(
             IntPtr hFile,
             byte[] lpBuffer,
@@ -49,13 +49,13 @@ namespace ESP32SimWheel.HidAPI
             out uint lpNumberOfBytesWritten,
             IntPtr lpOverlapped);
 
-        [DllImport("hid.dll")]
+        [DllImport("hid.dll", CharSet = CharSet.Auto, SetLastError = true)]
         internal static extern bool HidD_GetFeature(
             IntPtr hidDeviceObject,
             byte[] lpReportBuffer,
             int reportBufferLength);
 
-        [DllImport("hid.dll")]
+        [DllImport("hid.dll", CharSet = CharSet.Auto, SetLastError = true)]
         internal static extern bool HidD_GetInputReport(
             IntPtr hidDeviceObject,
             byte[] lpReportBuffer,
@@ -64,13 +64,13 @@ namespace ESP32SimWheel.HidAPI
         [DllImport("hid.dll")]
         internal static extern void HidD_GetHidGuid(ref Guid hidGuid);
 
-        [DllImport("hid.dll")]
+        [DllImport("hid.dll", CharSet = CharSet.Auto, SetLastError = true)]
         internal static extern bool HidD_SetFeature(
             IntPtr hidDeviceObject,
             byte[] lpReportBuffer,
             int reportBufferLength);
 
-        [DllImport("hid.dll")]
+        [DllImport("hid.dll", CharSet = CharSet.Auto, SetLastError = true)]
         internal static extern bool HidD_SetOutputReport(
             IntPtr hidDeviceObject,
             byte[] lpReportBuffer,
@@ -86,7 +86,7 @@ namespace ESP32SimWheel.HidAPI
             IntPtr preparsedData,
             ref NativeMethods.HIDP_CAPS capabilities);
 
-        [DllImport("hid.dll")]
+        [DllImport("hid.dll", CharSet = CharSet.Auto, SetLastError = true)]
         internal static extern bool HidD_GetPreparsedData(
               IntPtr hidDeviceObject,
               ref IntPtr preparsedData);
@@ -94,7 +94,7 @@ namespace ESP32SimWheel.HidAPI
         [DllImport("hid.dll")]
         internal static extern bool HidD_FreePreparsedData(IntPtr preparsedData);
 
-        [DllImport("hid.dll")]
+        [DllImport("hid.dll", CharSet = CharSet.Auto, SetLastError = true)]
         internal static extern bool HidD_SetNumInputBuffers(
             IntPtr hidDeviceObject,
             ulong NumberBuffers);
@@ -142,6 +142,13 @@ namespace ESP32SimWheel.HidAPI
         }
 
 #pragma warning restore 0649
+
+        internal const uint ERROR_CANCELLED = 0x4C7;
+        internal const uint ERROR_INVALID_FUNCTION = 0x01;
+        internal const uint ERROR_DEVICE_IN_USE = 0x964;
+        internal const uint ERROR_DEV_NOT_EXIST = 0x37;
+        internal const uint ERROR_DEVICE_NOT_CONNECTED = 0x48F;
+        internal const uint ERROR_DEVICE_UNREACHABLE = 0x141;
 
     }
 }

@@ -77,7 +77,6 @@ namespace ESP32SimWheel.HidAPI
                     }
                     else
                     {
-                        LastError = Marshal.GetLastWin32Error();
                         SimHub.Logging.Current.InfoFormat(
                             "[ESP32 Sim-wheel] [HidAPI] HidD_GetAttributes() failed with code {0}",
                             LastError);
@@ -95,11 +94,10 @@ namespace ESP32SimWheel.HidAPI
                     }
                     else
                     {
-                        LastError = Marshal.GetLastWin32Error();
+                        HandleLastError();
                         SimHub.Logging.Current.InfoFormat(
                             "[ESP32 Sim-wheel] [HidAPI] HidD_GetPreparsedData() failed with code {0}",
                             LastError);
-                        Close();
                         return false;
                     }
                     Usage = capabilities.Usage;
@@ -111,12 +109,11 @@ namespace ESP32SimWheel.HidAPI
                     // Try to increase read buffers
                     if (!NativeMethods.HidD_SetNumInputBuffers(Handle, 256))
                     {
-                        LastError = Marshal.GetLastWin32Error();
+                        HandleLastError();
                         SimHub.Logging.Current.InfoFormat(
                             "[ESP32 Sim-wheel] [HidAPI] HidD_SetNumInputBuffers() failed with code {0}",
                             LastError);
                     }
-
                     return true;
                 }
                 else
@@ -154,12 +151,10 @@ namespace ESP32SimWheel.HidAPI
             {
                 if (!NativeMethods.HidD_GetFeature(Handle, data, data.Length))
                 {
-                    LastError = Marshal.GetLastWin32Error();
+                    HandleLastError();
                     SimHub.Logging.Current.InfoFormat(
                         "[ESP32 Sim-wheel] [HidAPI] HidD_GetFeature() failed with code {0}",
                         LastError);
-                    if (LastError != 0)
-                        Close();
                     return false;
                 }
                 // NativeMethods.HidD_FlushQueue(Handle);
@@ -174,8 +169,7 @@ namespace ESP32SimWheel.HidAPI
             {
                 if (!NativeMethods.HidD_SetFeature(Handle, data, data.Length))
                 {
-                    LastError = Marshal.GetLastWin32Error();
-                    Close();
+                    HandleLastError();
                     return false;
                 }
                 return true;
@@ -195,8 +189,10 @@ namespace ESP32SimWheel.HidAPI
                     out lpNumberOfBytesWritten,
                     IntPtr.Zero))
                 {
-                    LastError = Marshal.GetLastWin32Error();
-                    Close();
+                    HandleLastError();
+                    SimHub.Logging.Current.InfoFormat(
+                        "[ESP32 Sim-wheel] [HidAPI] Write() failed with code {0}",
+                        LastError);
                     return false;
                 }
                 NativeMethods.FlushFileBuffers(Handle);
@@ -210,6 +206,7 @@ namespace ESP32SimWheel.HidAPI
             Dispose(true);
             GC.SuppressFinalize(this);
         }
+
         protected virtual void Dispose(bool disposing)
         {
             if (disposing)
@@ -223,6 +220,16 @@ namespace ESP32SimWheel.HidAPI
                 NativeMethods.CloseHandle(Handle);
                 Handle = (IntPtr)NativeMethods.INVALID_HANDLE_VALUE;
             }
+        }
+
+        private void HandleLastError()
+        {
+            LastError = Marshal.GetLastWin32Error();
+            if ((LastError == NativeMethods.ERROR_DEVICE_NOT_CONNECTED) ||
+                (LastError == NativeMethods.ERROR_DEV_NOT_EXIST) ||
+                (LastError == NativeMethods.ERROR_DEVICE_UNREACHABLE) ||
+                (LastError == NativeMethods.ERROR_CANCELLED))
+                Close();
         }
 
         private const uint DEVICE_ACCESS =
