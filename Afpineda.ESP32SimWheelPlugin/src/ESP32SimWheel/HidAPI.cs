@@ -77,6 +77,7 @@ namespace ESP32SimWheel.HidAPI
                     }
                     else
                     {
+                        LastError = Marshal.GetLastWin32Error();
                         SimHub.Logging.Current.InfoFormat(
                             "[ESP32 Sim-wheel] [HidAPI] HidD_GetAttributes() failed with code {0}",
                             LastError);
@@ -94,10 +95,11 @@ namespace ESP32SimWheel.HidAPI
                     }
                     else
                     {
-                        HandleLastError();
+                        LastError = Marshal.GetLastWin32Error();
                         SimHub.Logging.Current.InfoFormat(
                             "[ESP32 Sim-wheel] [HidAPI] HidD_GetPreparsedData() failed with code {0}",
                             LastError);
+                        Close();
                         return false;
                     }
                     Usage = capabilities.Usage;
@@ -109,7 +111,7 @@ namespace ESP32SimWheel.HidAPI
                     // Try to increase read buffers
                     if (!NativeMethods.HidD_SetNumInputBuffers(Handle, 256))
                     {
-                        HandleLastError();
+                        LastError = Marshal.GetLastWin32Error();
                         SimHub.Logging.Current.InfoFormat(
                             "[ESP32 Sim-wheel] [HidAPI] HidD_SetNumInputBuffers() failed with code {0}",
                             LastError);
