@@ -9,15 +9,20 @@ Basic device settings can also be configured.
 ## Installing
 
 1. Download the latest package.
-2. Unzip to the SimHub installation folder, typically:
-    `C:\Program Files (x86)\SimHub\`
-3. Run SimHub.
-4. It should detect this plugin automatically:
+2. Right-click on the downloaded ZIP file and select "Properties"
+3. At the bottom of the properties page, look for a security notice.
+4. Check the "**unblock**" box next to it.
+5. Unzip to the SimHub installation folder, typically:
+   `C:\Program Files (x86)\SimHub\`
+6. Run SimHub.
+7. It should detect this plugin automatically:
 
    ![Plugin detection](./doc/SimHubAutodetect.png)
 
-5. Click the right button to activate it, then click "Show in left main menu".
-6. A new item will appear in the left main menu, called "ESP32 Sim-wheel".
+8. Click the right button to activate it, then click "Show in left main menu".
+9. A new item may appear in the left main menu, called "ESP32 Sim-wheel".
+   On newer SimHub versions, this menu option is replaced by a tab inside the
+   "… Additional Plugins" menu.
 
 ### Upgrading to a newer version
 
@@ -106,6 +111,13 @@ folder relative to your installation folder.
 Files are named by serial number: one file per device and LED group.
 
 ## Known issues
+
+### SimHub does not detect the plugin
+
+Maybe your antivirus software is deleting the extracted files
+automatically without notice.
+Run your antivirus software on the ZIP file,
+but disable it before unzipping.
 
 ### Low frame rate (FPS)
 
