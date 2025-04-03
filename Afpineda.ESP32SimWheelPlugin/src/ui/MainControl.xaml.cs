@@ -306,7 +306,7 @@ namespace Afpineda.ESP32SimWheelPlugin
                 if (sender == IndividualLedsEditProfile)
                 {
                     driver = Plugin.Settings.SelectedDevice.Pixels.IndividualLedsDriver;
-                    subtitle = ButtonLedsGroup.Title;
+                    subtitle = IndividualLedsGroup.Title;
                 }
                 driver?.ShowEditorWindow(
                     this,
