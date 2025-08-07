@@ -244,5 +244,81 @@ namespace ESP32SimWheel.HidAPI
             NativeMethods.FILE_ATTRIBUTE_NORMAL |
             NativeMethods.FILE_FLAG_NO_BUFFERING |
             NativeMethods.FILE_FLAG_WRITE_THROUGH;
+    } // class HidDevice
+
+    public static class HidWatcher
+    {
+        private static IntPtr _notifyContext = IntPtr.Zero;
+
+        private static bool _eventRaised = false;
+
+        public static void Start()
+        {
+            if (_notifyContext != IntPtr.Zero)
+                // Already started
+                return;
+
+            var filter = new NativeMethods.CM_NOTIFY_FILTER
+            {
+                cbSize = Marshal.SizeOf<NativeMethods.CM_NOTIFY_FILTER>(),
+                Flags = 0,
+                FilterType = NativeMethods.CM_NOTIFY_FILTER_TYPE_DEVICE_INTERFACE,
+                Reserved = 0
+            };
+            NativeMethods.HidD_GetHidGuid(ref filter.DeviceInterface);
+
+            // Register the callback
+            int result = NativeMethods.CM_Register_Notification(
+                ref filter,
+                IntPtr.Zero,
+                DeviceNotificationCallback,
+                out _notifyContext);
+
+            if (result != 0)
+            {
+                SimHub.Logging.Current.InfoFormat(
+                    "[ESP32 Sim-wheel] [HidAPI] CM_Register_Notification() failed with code {0:X} - cbSize={1}",
+                    result,
+                    filter.cbSize);
+                _notifyContext = IntPtr.Zero;
+            }
+            else
+                SimHub.Logging.Current.Info(
+                    "[ESP32 Sim-wheel] [HidAPI] Hid watcher started");
+        }
+
+        public static void Stop()
+        {
+            if (_notifyContext != IntPtr.Zero)
+            {
+                NativeMethods.CM_Unregister_Notification(_notifyContext);
+                _notifyContext = IntPtr.Zero;
+            }
+        }
+
+        private static int DeviceNotificationCallback(
+            IntPtr hNotify,
+            IntPtr context,
+            int action,
+            ref NativeMethods.CM_NOTIFY_EVENT_DATA eventData,
+            int eventDataSize)
+        {
+            if (eventData.Reserved == NativeMethods.CM_NOTIFY_ACTION_DEVICE_INTERFACE_ARRIVAL ||
+               eventData.Reserved == NativeMethods.CM_NOTIFY_ACTION_DEVICE_INTERFACE_REMOVAL)
+            {
+                _eventRaised = true;
+            }
+            return 0;
+        }
+
+        public static bool Check()
+        {
+            if (_eventRaised)
+            {
+                _eventRaised = false;
+                return true;
+            }
+            return false;
+        }
     }
 }

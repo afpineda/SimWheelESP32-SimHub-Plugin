@@ -103,6 +103,19 @@ namespace ESP32SimWheel.HidAPI
         internal static extern bool HidD_FlushQueue(
             IntPtr HidDeviceObject);
 
+        [DllImport("cfgmgr32.dll", SetLastError = true)]
+        internal static extern int CM_Register_Notification(
+            ref CM_NOTIFY_FILTER pFilter,
+            IntPtr pContext,
+            CM_NOTIFY_CALLBACK pCallback,
+            out IntPtr pNotifyContext
+        );
+
+        [DllImport("cfgmgr32.dll", SetLastError = true)]
+        internal static extern int CM_Unregister_Notification(
+            IntPtr pNotifyContext
+        );
+
 #pragma warning disable 0649
 
         internal struct SECURITY_ATTRIBUTES
@@ -141,7 +154,39 @@ namespace ESP32SimWheel.HidAPI
             internal short NumberFeatureDataIndices;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct CM_NOTIFY_FILTER
+        {
+            public int cbSize;
+            public int Flags;
+            public int FilterType;
+            public UInt32 Reserved;
+            public Guid DeviceInterface; // Actually a union; using DeviceInterface for our case
+            // [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 168)]
+            // string InstanceId;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct CM_NOTIFY_EVENT_DATA
+        {
+            public int FilterType;
+            public int Reserved;
+            public Guid ClassGuid;
+            public IntPtr SymbolicLink;
+        }
+
 #pragma warning restore 0649
+
+        internal delegate int CM_NOTIFY_CALLBACK(
+            IntPtr hNotify,
+            IntPtr context,
+            int action,
+            ref CM_NOTIFY_EVENT_DATA eventData,
+            int eventDataSize);
+
+        internal const int CM_NOTIFY_FILTER_TYPE_DEVICE_INTERFACE = 0x00000005;
+        internal const int CM_NOTIFY_ACTION_DEVICE_INTERFACE_ARRIVAL = 0x00000000;
+        internal const int CM_NOTIFY_ACTION_DEVICE_INTERFACE_REMOVAL = 0x00000001;
 
         internal const uint ERROR_CANCELLED = 0x4C7;
         internal const uint ERROR_INVALID_FUNCTION = 0x01;

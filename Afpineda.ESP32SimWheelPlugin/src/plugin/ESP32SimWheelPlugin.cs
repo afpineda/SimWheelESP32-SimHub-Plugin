@@ -21,6 +21,7 @@ using SimHub.Plugins.DataPlugins.RGBDriver.Settings;
 using GameReaderCommon;
 
 using ESP32SimWheel;
+using ESP32SimWheel.HidAPI;
 
 namespace Afpineda.ESP32SimWheelPlugin
 {
@@ -56,7 +57,6 @@ namespace Afpineda.ESP32SimWheelPlugin
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
             // TimeSpan lastFrameTime = DateTime.UtcNow - _lastFrameTimestamp;
-
             if (data.GamePaused && !_gamePaused)
                 _refreshDeviceList = true;
             _gamePaused = data.GamePaused;
@@ -146,11 +146,13 @@ namespace Afpineda.ESP32SimWheelPlugin
             LoadSettings();
             // _lastFrameTimestamp = DateTime.UtcNow;
             _refreshDeviceList = true;
+            HidWatcher.Start();
         }
 
         public void End(PluginManager pluginManager)
         {
             SimHub.Logging.Current.Info("[ESP32 Sim-wheel] End");
+            HidWatcher.Stop();
             this.SaveCommonSettings<CustomSettings>("GeneralSettings", Settings);
             ResetAllPixels();
         }
