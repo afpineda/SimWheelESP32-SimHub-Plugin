@@ -34,10 +34,8 @@ except when asked.
 
 - To interact with this plugin, click on "ESP32 Sim-wheel" option
   in the left menu panel.
-- The plugin does **not** detect new devices at connection.
-  You can force a **refresh** in two ways:
-  - Pause your game.
-  - Click on the `🔄 Refresh` button.
+- The plugin detects new devices at connection but you can force a refresh
+  by clicking on the `🔄 Refresh` button.
 - Telemetry data will be sent to all connected and suitable devices.
 - Pixel data will be sent to all connected and suitable devices
   if an LED profile was configured and saved.
