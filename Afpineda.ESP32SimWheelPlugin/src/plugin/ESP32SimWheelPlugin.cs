@@ -57,9 +57,8 @@ namespace Afpineda.ESP32SimWheelPlugin
         public void DataUpdate(PluginManager pluginManager, ref GameData data)
         {
             // TimeSpan lastFrameTime = DateTime.UtcNow - _lastFrameTimestamp;
-            if (data.GamePaused && !_gamePaused)
+            if (HidWatcher.Check())
                 _refreshDeviceList = true;
-            _gamePaused = data.GamePaused;
 
             RefreshAvailableDevicesWhenNeeded();
             MonitorGameAndCar(ref data);
@@ -212,13 +211,12 @@ namespace Afpineda.ESP32SimWheelPlugin
         private bool _saveRequest = false;
         private DateTime _lastTick = DateTime.MinValue;
         // private DateTime _lastFrameTimestamp = DateTime.MinValue;
-        private bool _gamePaused = false;
         private uint _skippedFrames = 0;
         private const double TICK_RATE_MS = 500; // 2 FPS for UI
 
         // --------------------------------------------------------
        // --------------------------------------------------------
-       private const string PLUGIN_VERSION = "2.5.0";
+       private const string PLUGIN_VERSION = "2.6.0";
        // --------------------------------------------------------
        // --------------------------------------------------------
     }

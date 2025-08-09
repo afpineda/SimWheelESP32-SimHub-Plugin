@@ -250,6 +250,10 @@ namespace ESP32SimWheel.HidAPI
     {
         private static IntPtr _notifyContext = IntPtr.Zero;
 
+        // For some unknown reason, this static field is required
+        // to avoid the disposal of the callback function
+        private static NativeMethods.CM_NOTIFY_CALLBACK _callback = DeviceNotificationCallback;
+
         private static bool _eventRaised = false;
 
         public static void Start()
@@ -261,17 +265,20 @@ namespace ESP32SimWheel.HidAPI
             var filter = new NativeMethods.CM_NOTIFY_FILTER
             {
                 cbSize = Marshal.SizeOf<NativeMethods.CM_NOTIFY_FILTER>(),
+                // Use Flags = 1 if all device interfaces need watching
                 Flags = 0,
                 FilterType = NativeMethods.CM_NOTIFY_FILTER_TYPE_DEVICE_INTERFACE,
-                Reserved = 0
+                Reserved = 0,
+                DeviceInterface = Guid.Empty
             };
+            // Watch for HID interfaces only
             NativeMethods.HidD_GetHidGuid(ref filter.DeviceInterface);
 
             // Register the callback
             int result = NativeMethods.CM_Register_Notification(
                 ref filter,
                 IntPtr.Zero,
-                DeviceNotificationCallback,
+                _callback,
                 out _notifyContext);
 
             if (result != 0)
@@ -289,6 +296,8 @@ namespace ESP32SimWheel.HidAPI
 
         public static void Stop()
         {
+            SimHub.Logging.Current.Info(
+                   "[ESP32 Sim-wheel] [HidAPI] Hid watcher stopped");
             if (_notifyContext != IntPtr.Zero)
             {
                 NativeMethods.CM_Unregister_Notification(_notifyContext);
@@ -300,15 +309,17 @@ namespace ESP32SimWheel.HidAPI
             IntPtr hNotify,
             IntPtr context,
             int action,
-            ref NativeMethods.CM_NOTIFY_EVENT_DATA eventData,
+            IntPtr eventData,
             int eventDataSize)
         {
-            if (eventData.Reserved == NativeMethods.CM_NOTIFY_ACTION_DEVICE_INTERFACE_ARRIVAL ||
-               eventData.Reserved == NativeMethods.CM_NOTIFY_ACTION_DEVICE_INTERFACE_REMOVAL)
-            {
-                _eventRaised = true;
-            }
-            return 0;
+            // As the filter is for CM_NOTIFY_FILTER_TYPE_DEVICE_INTERFACE only,
+            // there is no need to inspect the eventData.
+            // There is also no need to discriminate the action,
+            // as only insertion and removal is notified.
+            _eventRaised = true;
+            // SimHub.Logging.Current.Info(
+            //         "[ESP32 Sim-wheel] [HidAPI] Hid watcher: device insertion or removal");
+            return 0; // must always return 0
         }
 
         public static bool Check()
