@@ -29,32 +29,32 @@ namespace ESP32SimWheel
 
             public void SendTelemetry(ref GameData data)
             {
-                if ((_millisecondsPerFrame > 0) &&
+                if ((_millisecondsPerFrame > 0) && (data != null) && (data.NewData != null) &&
                     (!_telemetryTimer.IsRunning || (_telemetryTimer.ElapsedMilliseconds >= _millisecondsPerFrame)))
+                {
+                    _telemetryTimer.Stop();
+                    if (_capabilities.UsesPowertrainTelemetry)
                     {
-                        _telemetryTimer.Stop();
-                        if (_capabilities.UsesPowertrainTelemetry)
-                        {
-                            BuildPowertrainReport(ref data.NewData);
-                            _hidDevice.Write(_powertrainReport);
-                        }
-                        if (_capabilities.UsesEcuTelemetry)
-                        {
-                            BuildEcuReport(ref data.NewData);
-                            _hidDevice.Write(_ecuReport);
-                        }
-                        if (_capabilities.UsesRaceControlTelemetry)
-                        {
-                            BuildRaceControlReport(ref data.NewData);
-                            _hidDevice.Write(_raceControlReport);
-                        }
-                        if (_capabilities.UsesGaugesTelemetry)
-                        {
-                            BuildGaugesReport(ref data.NewData);
-                            _hidDevice.Write(_gaugesReport);
-                        }
-                        _telemetryTimer.Restart();
+                        BuildPowertrainReport(ref data.NewData);
+                        _hidDevice.Write(_powertrainReport);
                     }
+                    if (_capabilities.UsesEcuTelemetry)
+                    {
+                        BuildEcuReport(ref data.NewData);
+                        _hidDevice.Write(_ecuReport);
+                    }
+                    if (_capabilities.UsesRaceControlTelemetry)
+                    {
+                        BuildRaceControlReport(ref data.NewData);
+                        _hidDevice.Write(_raceControlReport);
+                    }
+                    if (_capabilities.UsesGaugesTelemetry)
+                    {
+                        BuildGaugesReport(ref data.NewData);
+                        _hidDevice.Write(_gaugesReport);
+                    }
+                    _telemetryTimer.Restart();
+                }
             }
 
             // --------------------------------------------------------
