@@ -56,12 +56,14 @@ namespace ESP32SimWheel
         public bool UsesEcuTelemetry { get; }
         public bool UsesRaceControlTelemetry { get; }
         public bool UsesGaugesTelemetry { get; }
+        public bool UsesWheelsTelemetry { get; }
         public bool UsesTelemetryData
         {
             get
             {
                 return UsesPowertrainTelemetry || UsesEcuTelemetry ||
-                       UsesRaceControlTelemetry || UsesGaugesTelemetry;
+                       UsesRaceControlTelemetry || UsesGaugesTelemetry ||
+                       UsesWheelsTelemetry;
             }
         }
         public byte TelemetryLedsCount { get; }
@@ -110,6 +112,7 @@ namespace ESP32SimWheel
             UsesEcuTelemetry = (fps > 0) && (flags & 0x0080) != 0;
             UsesRaceControlTelemetry = (fps > 0) && (flags & 0x0100) != 0;
             UsesGaugesTelemetry = (fps > 0) && (flags & 0x0200) != 0;
+            UsesWheelsTelemetry = (fps > 0) && (flags & 0x0800) != 0;
             FramesPerSecond = fps;
             TelemetryLedsCount = telemetryLedsCount;
             ButtonsLightingCount = buttonsLightingCount;

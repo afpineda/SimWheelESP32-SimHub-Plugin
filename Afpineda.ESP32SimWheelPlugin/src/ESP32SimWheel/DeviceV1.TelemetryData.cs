@@ -12,6 +12,7 @@ using System.Diagnostics;
 using HidLibrary;
 using SimHub;
 using GameReaderCommon;
+using Microsoft.VisualBasic;
 
 namespace ESP32SimWheel
 {
@@ -29,8 +30,10 @@ namespace ESP32SimWheel
 
             public void SendTelemetry(ref GameData data)
             {
-                if ((_millisecondsPerFrame > 0) && (data != null) && (data.NewData != null) &&
-                    (!_telemetryTimer.IsRunning || (_telemetryTimer.ElapsedMilliseconds >= _millisecondsPerFrame)))
+                if ((_millisecondsPerFrame == 0) || (data == null) || (data.NewData == null))
+                    return;
+
+                if (!_telemetryTimer.IsRunning || (_telemetryTimer.ElapsedMilliseconds >= _millisecondsPerFrame))
                 {
                     _telemetryTimer.Stop();
                     if (_capabilities.UsesPowertrainTelemetry)
@@ -55,6 +58,16 @@ namespace ESP32SimWheel
                     }
                     _telemetryTimer.Restart();
                 }
+                if (_capabilities.UsesWheelsTelemetry)
+                {
+                    if (!_wheelsTelemetryTimer.IsRunning || (_wheelsTelemetryTimer.ElapsedMilliseconds >= 5000))
+                    {
+                        _wheelsTelemetryTimer.Stop();
+                        BuildWheelsReport(ref data.NewData);
+                        _hidDevice.Write(_wheelsReport);
+                        _wheelsTelemetryTimer.Restart();
+                    }
+                }
             }
 
             // --------------------------------------------------------
@@ -65,6 +78,7 @@ namespace ESP32SimWheel
             {
                 // Initialize ITelemetryData implementation
                 _telemetryTimer.Stop();
+                _wheelsTelemetryTimer.Stop();
                 if (_capabilities.UsesTelemetryData)
                 {
                     _millisecondsPerFrame = 1000 / _capabilities.FramesPerSecond;
@@ -73,12 +87,14 @@ namespace ESP32SimWheel
                     int report21Size;
                     int report22Size;
                     int report23Size;
+                    int report24Size;
                     GetTelemetryDataReportSizes(
                         _dataVersion.Minor,
                         out report20Size,
                         out report21Size,
                         out report22Size,
-                        out report23Size);
+                        out report23Size,
+                        out report24Size);
                     if ((report20Size > 0) && (report21Size > 0) && (report22Size > 0) && (report23Size > 0))
                     {
                         _powertrainReport = new byte[report20Size];
@@ -92,6 +108,12 @@ namespace ESP32SimWheel
                     }
                     else
                         throw new UnsupportedDeviceException();
+
+                    if ((_capabilities.UsesWheelsTelemetry) && (report24Size == 0))
+                        throw new UnsupportedDeviceException();
+                    _wheelsReport = new byte[report24Size];
+                    if (report24Size > 0)
+                        _gaugesReport[0] = Constants.RID_OUTPUT_WHEELS;
                 }
                 else
                     _millisecondsPerFrame = 0;
@@ -102,7 +124,8 @@ namespace ESP32SimWheel
                 out int report20Size,
                 out int report21Size,
                 out int report22Size,
-                out int report23Size)
+                out int report23Size,
+                out int report24Size)
             {
                 if (dataMinorVersion >= 3)
                 {
@@ -110,6 +133,10 @@ namespace ESP32SimWheel
                     report21Size = Constants.REPORT21_SIZE_V1_3;
                     report22Size = Constants.REPORT22_SIZE_V1_3;
                     report23Size = Constants.REPORT23_SIZE_V1_3;
+                    if (dataMinorVersion >= 7)
+                        report24Size = Constants.REPORT24_SIZE_V1_7;
+                    else
+                        report24Size = 0;
                 }
                 else
                 {
@@ -117,6 +144,7 @@ namespace ESP32SimWheel
                     report21Size = 0;
                     report22Size = 0;
                     report23Size = 0;
+                    report24Size = 0;
                 }
             }
 
@@ -321,16 +349,81 @@ namespace ESP32SimWheel
                     out _gaugesReport[12]);
             }
 
+            private void BuildWheelsReport(ref StatusDataBase data)
+            {
+                // Tire temperature
+                ToBytes(
+                    data.TyreTemperatureFrontLeft,
+                    out _wheelsReport[1],
+                    out _wheelsReport[2]);
+                ToBytes(
+                    data.TyreTemperatureFrontRight,
+                    out _wheelsReport[3],
+                    out _wheelsReport[4]);
+                ToBytes(
+                    data.TyreTemperatureRearLeft,
+                    out _wheelsReport[5],
+                    out _wheelsReport[6]);
+                ToBytes(
+                    data.TyreTemperatureRearRight,
+                    out _wheelsReport[7],
+                    out _wheelsReport[8]);
+
+                // Tire pressure
+                ToBytes(
+                    data.TyrePressureFrontLeft * 100,
+                    out _wheelsReport[9],
+                    out _wheelsReport[10]);
+                ToBytes(
+                    data.TyrePressureFrontRight * 100,
+                    out _wheelsReport[11],
+                    out _wheelsReport[12]);
+                ToBytes(
+                    data.TyrePressureRearLeft * 100,
+                    out _wheelsReport[13],
+                    out _wheelsReport[14]);
+                ToBytes(
+                    data.TyrePressureRearRight * 100,
+                    out _wheelsReport[15],
+                    out _wheelsReport[16]);
+
+                // Brake temperature
+                ToBytes(
+                   data.BrakeTemperatureFrontLeft,
+                   out _wheelsReport[17],
+                   out _wheelsReport[18]);
+                ToBytes(
+                   data.BrakeTemperatureFrontRight,
+                   out _wheelsReport[19],
+                   out _wheelsReport[20]);
+                ToBytes(
+                   data.BrakeTemperatureRearLeft,
+                   out _wheelsReport[21],
+                   out _wheelsReport[22]);
+                ToBytes(
+                   data.BrakeTemperatureRearRight,
+                   out _wheelsReport[23],
+                   out _wheelsReport[24]);
+
+                // Tire wear
+                _wheelsReport[25] = ToByte(data.TyreWearFrontLeft);
+                _wheelsReport[26] = ToByte(data.TyreWearFrontRight);
+                _wheelsReport[27] = ToByte(data.TyreWearRearLeft);
+                _wheelsReport[28] = ToByte(data.TyreWearRearRight);
+            }
+
             // --------------------------------------------------------
             // Private fields (ITelemetryData)
             // --------------------------------------------------------
 
             private Stopwatch _telemetryTimer = new Stopwatch();
+            private Stopwatch _wheelsTelemetryTimer = new Stopwatch();
             private int _millisecondsPerFrame = 0;
             private byte[] _powertrainReport;
             private byte[] _ecuReport;
             private byte[] _raceControlReport;
             private byte[] _gaugesReport;
+            private byte[] _wheelsReport;
 
 
         } // class Device

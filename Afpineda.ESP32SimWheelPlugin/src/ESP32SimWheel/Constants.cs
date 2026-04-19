@@ -27,6 +27,7 @@ namespace ESP32SimWheel
             internal const byte RID_OUTPUT_ECU = 21;
             internal const byte RID_OUTPUT_RACE_CONTROL = 22;
             internal const byte RID_OUTPUT_GAUGES = 23;
+            internal const byte RID_OUTPUT_WHEELS = 24;
             internal const byte RID_OUTPUT_PIXEL = 30;
 
             // Report sizes
@@ -43,6 +44,7 @@ namespace ESP32SimWheel
             internal const short REPORT21_SIZE_V1_3 = 9 + 1;
             internal const short REPORT22_SIZE_V1_3 = 11 + 1;
             internal const short REPORT23_SIZE_V1_3 = 12 + 1;
+            internal const short REPORT24_SIZE_V1_7 = 28 + 1;
             internal const short REPORT30_SIZE_V1_4 = 6 + 1;
 
             // Simple commands
@@ -50,7 +52,7 @@ namespace ESP32SimWheel
             internal const byte CMD_RESET_PIXELS = 8;
 
             // version
-            internal const ushort SUPPORTED_MINOR_VERSION = 6;
+            internal const ushort SUPPORTED_MINOR_VERSION = 7;
         } // class Constants
     } // namespace V1
 } // namespace ESP32SimWheel
