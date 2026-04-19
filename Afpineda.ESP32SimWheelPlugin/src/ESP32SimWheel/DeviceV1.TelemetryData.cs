@@ -113,7 +113,7 @@ namespace ESP32SimWheel
                         throw new UnsupportedDeviceException();
                     _wheelsReport = new byte[report24Size];
                     if (report24Size > 0)
-                        _gaugesReport[0] = Constants.RID_OUTPUT_WHEELS;
+                        _wheelsReport[0] = Constants.RID_OUTPUT_WHEELS;
                 }
                 else
                     _millisecondsPerFrame = 0;
